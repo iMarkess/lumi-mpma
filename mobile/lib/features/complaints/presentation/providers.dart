@@ -1,12 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config.dart';
+import '../data/api_complaint_repository.dart';
 import '../data/complaint_repository.dart';
 import '../domain/complaint.dart';
 
-/// Injeção do repositório. Para plugar a API real, troque por:
-/// `ApiComplaintRepository(baseUrl: ...)`.
+/// Usa a API real do VPS quando configurada; senão, mock.
 final complaintRepositoryProvider = Provider<ComplaintRepository>(
-  (ref) => MockComplaintRepository(),
+  (ref) => AppConfig.useApi ? ApiComplaintRepository() : MockComplaintRepository(),
 );
 
 /// Lista de denúncias recentes (usada na Home e no Acompanhar).

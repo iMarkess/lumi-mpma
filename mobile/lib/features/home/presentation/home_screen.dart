@@ -39,7 +39,7 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       Text('${DateFmt.greeting()},', style: t.bodyMedium),
                       Text(
-                        user?.firstName ?? 'Cidadão',
+                        '${user?.firstName ?? 'Cidadão'}!',
                         style: t.headlineSmall,
                       ),
                     ],
@@ -48,7 +48,16 @@ class HomeScreen extends ConsumerWidget {
                 _Avatar(initials: user?.initials ?? '?'),
               ],
             ).animate().fadeIn(duration: 350.ms),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+            Text(
+              'Qual denúncia você deseja fazer hoje?',
+              style: t.titleLarge,
+            ).animate().fadeIn(delay: 80.ms).moveY(begin: 8, end: 0),
+            const SizedBox(height: 18),
+
+            // Categorias de denúncia (acesso direto)
+            _CategoryLauncher(),
+            const SizedBox(height: 24),
 
             // Banner destaque (alerta / chamada)
             AppCard(
@@ -141,6 +150,43 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CategoryLauncher extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return Column(
+      children: [
+        for (var i = 0; i < ComplaintCategory.values.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: AppCard(
+              onTap: () => context.go('/denunciar/${ComplaintCategory.values[i].id}'),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: ComplaintCategory.values[i].color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Icon(ComplaintCategory.values[i].icon,
+                        color: ComplaintCategory.values[i].color, size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(ComplaintCategory.values[i].label, style: t.titleMedium),
+                  ),
+                  const Icon(Icons.chevron_right_rounded),
+                ],
+              ),
+            ),
+          ).animate().fadeIn(delay: (100 + 70 * i).ms).moveX(begin: 16, end: 0),
+      ],
     );
   }
 }

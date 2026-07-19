@@ -60,6 +60,17 @@ echo "==> 6/8 Gerar plataforma Android"
 flutter config --android-sdk "$ANDROID_SDK_ROOT" >/dev/null
 flutter create --org br.mp --project-name lumi --platforms=android . >/dev/null
 sed -i 's/android:label="[^"]*"/android:label="LUMI"/' android/app/src/main/AndroidManifest.xml
+# Permite HTTP em claro só para a API do VPS (troque por HTTPS em produção)
+mkdir -p android/app/src/main/res/xml
+cat > android/app/src/main/res/xml/network_security_config.xml <<'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="true">31.97.151.126</domain>
+  </domain-config>
+</network-security-config>
+XML
+sed -i 's#<application #<application android:networkSecurityConfig="@xml/network_security_config" #' android/app/src/main/AndroidManifest.xml
 
 echo "==> 7/8 Chave de assinatura"
 if [ -z "${STORE_PW:-}" ]; then read -rsp "Crie a senha da keystore (guarde!): " STORE_PW; echo; fi

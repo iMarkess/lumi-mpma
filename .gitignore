@@ -46,3 +46,8 @@ next-env.d.ts
 
 # skill data / agent
 .agent/
+
+# app bundles / keystores (nunca commitar)
+*.aab
+*.jks
+*.keystore
