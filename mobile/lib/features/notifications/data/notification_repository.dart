@@ -17,14 +17,14 @@ class MockNotificationRepository implements NotificationRepository {
         id: 'n1',
         kind: NotificationKind.update,
         title: 'Sua denúncia mudou de status',
-        body: 'O protocolo MPMA-X82J91 entrou em análise.',
+        body: 'O protocolo LUMI-X82J91 entrou em análise.',
         date: now.subtract(const Duration(minutes: 25)),
       ),
       AppNotification(
         id: 'n2',
         kind: NotificationKind.alert,
         title: 'Documento pendente',
-        body: 'Anexe uma foto para agilizar a triagem do MPMA-A72K12.',
+        body: 'Anexe uma foto para agilizar a triagem do LUMI-A72K12.',
         date: now.subtract(const Duration(hours: 4)),
       ),
       AppNotification(

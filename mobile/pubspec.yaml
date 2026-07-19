@@ -1,7 +1,7 @@
 name: lumi_sentinela
-description: "LUMI MPMA — aplicativo oficial do Ministério Público do Maranhão para denúncias e proteção de direitos."
+description: "LUMI - Denúncia Cidadã: registre denúncias com segurança e sigilo e acompanhe pelo protocolo."
 publish_to: "none"
-version: 1.0.1+2
+version: 1.0.2+3
 
 environment:
   sdk: ">=3.6.0 <4.0.0"

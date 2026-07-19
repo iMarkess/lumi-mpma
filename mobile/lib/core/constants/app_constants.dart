@@ -1,8 +1,8 @@
 /// Constantes globais do aplicativo.
 abstract class AppConstants {
   static const String appName = 'LUMI';
-  static const String orgName = 'Ministério Público do Maranhão';
-  static const String orgShort = 'MPMA';
+  static const String orgName = 'Denúncia Cidadã';
+  static const String orgShort = 'LUMI';
 
   /// Atraso simulado das chamadas mock (troque por HTTP real depois).
   static const Duration mockLatency = Duration(milliseconds: 700);

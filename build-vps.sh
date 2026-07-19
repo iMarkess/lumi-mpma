@@ -72,6 +72,9 @@ cat > android/app/src/main/res/xml/network_security_config.xml <<'XML'
 </network-security-config>
 XML
 sed -i 's#<application #<application android:networkSecurityConfig="@xml/network_security_config" #' android/app/src/main/AndroidManifest.xml
+# Package/applicationId independente (app não-governamental)
+sed -i 's/applicationId = "[^"]*"/applicationId = "br.com.lumi.denuncia"/' android/app/build.gradle.kts
+sed -i 's/namespace = "[^"]*"/namespace = "br.com.lumi.denuncia"/' android/app/build.gradle.kts
 
 echo "==> 7/8 Chave de assinatura"
 if [ -z "${STORE_PW:-}" ]; then read -rsp "Crie a senha da keystore (guarde!): " STORE_PW; echo; fi

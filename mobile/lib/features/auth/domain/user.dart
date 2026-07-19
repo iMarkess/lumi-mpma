@@ -15,7 +15,7 @@ class AppUser {
     required this.name,
     required this.role,
     this.cpf,
-    this.institution = 'Ministério Público do Maranhão',
+    this.institution = 'Denúncia Cidadã',
     this.photoUrl,
   });
 

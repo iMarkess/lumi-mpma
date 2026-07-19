@@ -23,7 +23,7 @@ abstract class ComplaintRepository {
 class MockComplaintRepository implements ComplaintRepository {
   final List<Complaint> _items = [
     Complaint(
-      id: 'MPMA-X82J91',
+      id: 'LUMI-X82J91',
       category: ComplaintCategory.child,
       title: 'Possível negligência em escola',
       location: 'São Luís',
@@ -33,7 +33,7 @@ class MockComplaintRepository implements ComplaintRepository {
       description: 'Relato de negligência sistemática com alunos.',
     ),
     Complaint(
-      id: 'MPMA-A72K12',
+      id: 'LUMI-A72K12',
       category: ComplaintCategory.env,
       title: 'Queimada irregular em terreno',
       location: 'Imperatriz',
@@ -43,7 +43,7 @@ class MockComplaintRepository implements ComplaintRepository {
       description: 'Fogo em área de proteção ambiental.',
     ),
     Complaint(
-      id: 'MPMA-B33L90',
+      id: 'LUMI-B33L90',
       category: ComplaintCategory.elderly,
       title: 'Maus-tratos por familiar',
       location: 'Caxias',
@@ -53,7 +53,7 @@ class MockComplaintRepository implements ComplaintRepository {
       description: 'Idoso em situação de abandono.',
     ),
     Complaint(
-      id: 'MPMA-E44N10',
+      id: 'LUMI-E44N10',
       category: ComplaintCategory.env,
       title: 'Descarte de lixo em rio',
       location: 'Paço do Lumiar',
@@ -92,7 +92,7 @@ class MockComplaintRepository implements ComplaintRepository {
   }) async {
     await Future.delayed(AppConstants.mockLatency);
     final protocol =
-        'MPMA-${DateTime.now().millisecondsSinceEpoch.toRadixString(36).toUpperCase().substring(0, 6)}';
+        'LUMI-${DateTime.now().millisecondsSinceEpoch.toRadixString(36).toUpperCase().substring(0, 6)}';
     final complaint = Complaint(
       id: protocol,
       category: category,

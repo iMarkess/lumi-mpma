@@ -119,7 +119,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                     ),
                     child: Image.asset(
-                      'assets/images/lumi_logo.png',
+                      'assets/images/lumi_brand.png',
                       height: 84,
                     ),
                   ).animate().fadeIn(duration: 400.ms).scale(
@@ -164,7 +164,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Text('Acesso restrito', style: t.titleLarge),
                           const SizedBox(height: 4),
                           Text(
-                            'Servidores do MPMA entram com CPF e senha.',
+                            'Servidores autorizados entram com CPF e senha.',
                             style: t.bodySmall,
                           ),
                           const SizedBox(height: 20),
@@ -285,7 +285,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 style: Theme.of(ctx).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
-              'Informe seu CPF. Enviaremos as instruções de redefinição para o e-mail cadastrado no MPMA.',
+              'Informe seu CPF. Enviaremos as instruções de redefinição para o e-mail cadastrado.',
               style: Theme.of(ctx).textTheme.bodyMedium,
             ),
             const SizedBox(height: 18),

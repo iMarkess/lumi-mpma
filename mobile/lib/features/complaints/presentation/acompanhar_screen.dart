@@ -53,7 +53,7 @@ class _AcompanharScreenState extends ConsumerState<AcompanharScreen> {
           // Search bar
           SearchBar(
             controller: _controller,
-            hintText: 'Ex.: MPMA-X82J91',
+            hintText: 'Ex.: LUMI-X82J91',
             leading: const Icon(Icons.search_rounded),
             trailing: [
               FilledButton(

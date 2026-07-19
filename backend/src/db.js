@@ -7,5 +7,5 @@ export const prisma = new PrismaClient({
 /// Gera um protocolo único no formato MPMA-XXXXXX.
 export function generateProtocol() {
   const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `MPMA-${rand}`;
+  return `LUMI-${rand}`;
 }

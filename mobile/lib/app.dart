@@ -14,7 +14,7 @@ class LUMIApp extends ConsumerWidget {
     final themeMode = ref.watch(themeControllerProvider);
 
     return MaterialApp.router(
-      title: 'LUMI MPMA',
+      title: 'LUMI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
