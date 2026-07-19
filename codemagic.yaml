@@ -1,0 +1,60 @@
+# Build do app NATIVO (Flutter) na nuvem — gera o .aab pra Play Store.
+# Sem instalar Flutter/Android SDK localmente.
+#
+# Como usar:
+# 1. Suba este repositório no GitHub/GitLab/Bitbucket.
+# 2. Em https://codemagic.io conecte o repositório.
+# 3. Em Settings → Code signing (Android), crie/adicione um keystore com
+#    referência "lumi_keystore" (o Codemagic mostra o SHA-1 depois — use no
+#    OAuth Android do Google e no Play Console).
+# 4. Rode o workflow "android-lumi". Baixe o .aab e suba na Play Console.
+
+workflows:
+  android-lumi:
+    name: LUMI Android (AAB)
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      android_signing:
+        - lumi_keystore        # referência criada em Code signing
+      vars:
+        PACKAGE_NAME: "br.mp.lumi"
+    scripts:
+      - name: Gerar plataformas nativas (android/)
+        script: |
+          cd mobile
+          flutter create --org br.mp --project-name lumi --platforms=android .
+          # Nome exibido do app = LUMI
+          sed -i 's/android:label="[^"]*"/android:label="LUMI"/' \
+            android/app/src/main/AndroidManifest.xml
+      - name: Dependências
+        script: |
+          cd mobile
+          flutter pub get
+      - name: Ícone + splash
+        script: |
+          cd mobile
+          dart run flutter_launcher_icons || true
+          dart run flutter_native_splash:create || true
+      - name: Analisar
+        script: |
+          cd mobile
+          flutter analyze || true
+      - name: Build AAB (release)
+        script: |
+          cd mobile
+          flutter build appbundle --release
+    artifacts:
+      - mobile/build/**/outputs/**/*.aab
+      - mobile/build/**/outputs/**/mapping.txt
+    publishing:
+      email:
+        recipients:
+          - nexxussoftwaree@gmail.com
+        notify:
+          success: true
+          failure: true
+      # Publicação automática na Play (opcional): configure a conta de serviço.
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: internal

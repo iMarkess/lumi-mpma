@@ -1,0 +1,19 @@
+# Netlify headers — servidos a partir da raiz do site publicado.
+
+# Service worker nunca deve ser cacheado (garante atualização imediata).
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /
+
+# Manifest com o content-type correto.
+/manifest.webmanifest
+  Content-Type: application/manifest+json; charset=utf-8
+
+# Ícones e assets estáticos podem ser cacheados agressivamente.
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cabeçalhos de segurança básicos.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PROMOTOR
+  SECRETARIA
+  OUVIDORIA
+  MASTER
+}
+
+enum Category {
+  child
+  elderly
+  env
+}
+
+enum Status {
+  recebida
+  em_triagem
+  em_analise
+  concluida
+  rejeitada
+}
+
+enum Priority {
+  alta
+  media
+  baixa
+}
+
+/// Cidadãos cadastrados no app (login/cadastro, opcionalmente via Google).
+model Citizen {
+  id           String   @id @default(uuid())
+  name         String
+  cpf          String?  @unique
+  email        String?  @unique
+  passwordHash String?
+  googleId     String?  @unique
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+}
+
+/// Servidores do MPMA (acesso ao painel).
+model Profile {
+  id           String   @id @default(uuid())
+  name         String
+  cpf          String   @unique
+  passwordHash String
+  role         Role     @default(OUVIDORIA)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  events       ComplaintEvent[]
+}
+
+/// Denúncia. O id é o protocolo (MPMA-XXXXXX).
+model Complaint {
+  id           String   @id
+  category     Category
+  title        String
+  location     String   @default("Não informado")
+  description  String
+  status       Status   @default(recebida)
+  priority     Priority @default(media)
+  anonymous    Boolean  @default(true)
+  contactEmail String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  events        ComplaintEvent[]
+  attachments   Attachment[]
+  notifications Notification[]
+
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+/// Trilha de auditoria / timeline de status.
+model ComplaintEvent {
+  id          String    @id @default(uuid())
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  complaintId String
+  fromStatus  Status?
+  toStatus    Status
+  note        String?
+  actor       Profile?  @relation(fields: [actorId], references: [id])
+  actorId     String?
+  createdAt   DateTime  @default(now())
+
+  @@index([complaintId])
+}
+
+/// Anexos de mídia (evidências).
+model Attachment {
+  id          String    @id @default(uuid())
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  complaintId String
+  path        String
+  mime        String
+  size        Int
+  createdAt   DateTime  @default(now())
+}
+
+/// Notificações para o cidadão (por protocolo).
+model Notification {
+  id          String    @id @default(uuid())
+  complaint   Complaint? @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+  complaintId String?
+  protocol    String?
+  kind        String    @default("update")
+  title       String
+  body        String
+  read        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([protocol])
+}

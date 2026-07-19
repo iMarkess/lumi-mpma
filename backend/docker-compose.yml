@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sentinela
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sentinela_dev}
+      POSTGRES_DB: sentinela
+    volumes:
+      - sentinela_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinela"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Exponha só se precisar acessar o banco de fora do VPS:
+    # ports:
+    #   - "5432:5432"
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://sentinela:${DB_PASSWORD:-sentinela_dev}@db:5432/sentinela?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-em-producao}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      PORT: "3333"
+      NODE_ENV: production
+    ports:
+      - "3333:3333"
+
+volumes:
+  sentinela_pgdata:

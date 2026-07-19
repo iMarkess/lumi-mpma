@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#00458E" />
+    <title>Sem conexão — LUMI MPMA</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.25rem;
+        padding: max(2rem, env(safe-area-inset-top)) 1.5rem
+          max(2rem, env(safe-area-inset-bottom));
+        text-align: center;
+        background: linear-gradient(160deg, #eef1f6 0%, #f6f8fc 60%, #ffffff 100%);
+        color: #0b1220;
+      }
+      .logo { width: 96px; height: 96px; object-fit: contain; }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #00458e;
+      }
+      .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #d97706; box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.18);
+      }
+      h1 { font-size: 1.5rem; letter-spacing: -0.02em; }
+      p { color: #64748b; max-width: 32ch; line-height: 1.6; }
+      button {
+        margin-top: 0.5rem;
+        border: none;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        color: #fff;
+        padding: 14px 28px;
+        border-radius: 9999px;
+        background: linear-gradient(135deg, #1e6fc4 0%, #00458e 60%, #002d5c 100%);
+        box-shadow: 0 14px 34px -10px rgba(0, 69, 142, 0.55);
+      }
+      button:active { transform: scale(0.97); }
+    </style>
+  </head>
+  <body>
+    <img class="logo" src="/icons/icon-192.png" alt="LUMI MPMA" />
+    <span class="badge"><span class="dot"></span> Sem conexão</span>
+    <h1>Você está offline</h1>
+    <p>
+      Não foi possível conectar. Verifique sua internet — suas denúncias já
+      registradas continuam salvas neste aparelho.
+    </p>
+    <button onclick="location.reload()">Tentar novamente</button>
+  </body>
+</html>
