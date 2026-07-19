@@ -71,7 +71,10 @@ class MockAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() async {
-    await GoogleAuthService().signOut();
-    await Future.delayed(const Duration(milliseconds: 200));
+    try {
+      await GoogleAuthService().signOut();
+    } catch (_) {
+      // Ignora se o Google não estiver configurado/logado.
+    }
   }
 }

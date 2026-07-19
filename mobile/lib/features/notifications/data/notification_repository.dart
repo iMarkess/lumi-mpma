@@ -38,7 +38,7 @@ class MockNotificationRepository implements NotificationRepository {
       AppNotification(
         id: 'n4',
         kind: NotificationKind.system,
-        title: 'Bem-vindo ao LUMI',
+        title: 'Bem-vindo à LUMI',
         body: 'Denuncie com segurança e acompanhe tudo pelo app.',
         date: now.subtract(const Duration(days: 2)),
         read: true,

@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../settings/presentation/settings_screens.dart';
 import 'theme_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -125,17 +126,23 @@ class ProfileScreen extends ConsumerWidget {
           Text('Conta e segurança', style: t.titleMedium),
           const SizedBox(height: 10),
           _MenuGroup(items: [
-            _MenuItem(Icons.lock_outline_rounded, 'Alterar senha'),
-            _MenuItem(Icons.security_rounded, 'Segurança'),
-            _MenuItem(Icons.privacy_tip_outlined, 'Privacidade'),
-            _MenuItem(Icons.notifications_active_outlined, 'Notificações'),
+            _MenuItem(Icons.lock_outline_rounded, 'Alterar senha',
+                () => const ChangePasswordScreen()),
+            _MenuItem(Icons.security_rounded, 'Segurança',
+                () => const SecuritySettingsScreen()),
+            _MenuItem(Icons.privacy_tip_outlined, 'Privacidade',
+                () => const PrivacySettingsScreen()),
+            _MenuItem(Icons.notifications_active_outlined, 'Notificações',
+                () => const NotificationsSettingsScreen()),
           ]),
           const SizedBox(height: 16),
           Text('Suporte', style: t.titleMedium),
           const SizedBox(height: 10),
           _MenuGroup(items: [
-            _MenuItem(Icons.help_outline_rounded, 'Central de ajuda'),
-            _MenuItem(Icons.info_outline_rounded, 'Sobre o LUMI'),
+            _MenuItem(Icons.help_outline_rounded, 'Central de ajuda',
+                () => const HelpScreen()),
+            _MenuItem(Icons.info_outline_rounded, 'Sobre a LUMI',
+                () => const AboutScreen()),
           ]),
           const SizedBox(height: 22),
 
@@ -186,9 +193,10 @@ class ProfileScreen extends ConsumerWidget {
 }
 
 class _MenuItem {
-  const _MenuItem(this.icon, this.label);
+  const _MenuItem(this.icon, this.label, this.page);
   final IconData icon;
   final String label;
+  final Widget Function() page;
 }
 
 class _MenuGroup extends StatelessWidget {
@@ -208,8 +216,8 @@ class _MenuGroup extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleSmall),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${items[i].label} — em breve.')),
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => items[i].page()),
                 );
               },
             ),
