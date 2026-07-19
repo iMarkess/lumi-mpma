@@ -35,6 +35,18 @@ app.decorate('authenticate', async (request, reply) => {
 
 app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 
+// Download do APK (para instalar direto no celular durante os testes)
+app.get('/download/lumi.apk', async (_req, reply) => {
+  const { createReadStream, existsSync } = await import('node:fs');
+  const path = '/downloads/lumi.apk';
+  if (!existsSync(path)) {
+    return reply.code(404).send({ error: 'APK ainda não disponível' });
+  }
+  reply.header('Content-Type', 'application/vnd.android.package-archive');
+  reply.header('Content-Disposition', 'attachment; filename="lumi.apk"');
+  return reply.send(createReadStream(path));
+});
+
 await app.register(complaintRoutes);
 await app.register(citizenRoutes);
 await app.register(authRoutes);

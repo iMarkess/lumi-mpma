@@ -51,3 +51,8 @@ next-env.d.ts
 *.aab
 *.jks
 *.keystore
+
+# apk servido em runtime
+backend/downloads/
+
+.puppeteer_data/
