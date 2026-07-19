@@ -35,6 +35,19 @@ app.decorate('authenticate', async (request, reply) => {
 
 app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 
+// Preview do app no navegador (build web do Flutter), se disponível.
+{
+  const { existsSync } = await import('node:fs');
+  if (existsSync('/downloads/web/index.html')) {
+    const fastifyStatic = (await import('@fastify/static')).default;
+    await app.register(fastifyStatic, {
+      root: '/downloads/web',
+      prefix: '/web/',
+      decorateReply: false,
+    });
+  }
+}
+
 // Download do APK (para instalar direto no celular durante os testes)
 app.get('/download/lumi.apk', async (_req, reply) => {
   const { createReadStream, existsSync } = await import('node:fs');
