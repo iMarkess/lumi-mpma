@@ -151,8 +151,8 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
 
   bool get _canAdvance {
     final v = _answers[_current.field]?.trim() ?? '';
-    // Texto/descrição exigem conteúdo mínimo; escolhas exigem seleção.
-    if (_current.type == FieldType.textarea) return v.length >= 5;
+    // Descrição precisa de ao menos 10 caracteres (regra do servidor).
+    if (_current.type == FieldType.textarea) return v.length >= 10;
     if (_current.type == FieldType.text) return v.isNotEmpty;
     return v.isNotEmpty;
   }
@@ -162,9 +162,10 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
       _answers[_current.field] = _textController.text.trim();
     }
     if (!_canAdvance) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha para continuar.')),
-      );
+      final msg = _current.type == FieldType.textarea
+          ? 'Descreva com mais detalhes (mínimo 10 letras).'
+          : 'Preencha para continuar.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       return;
     }
     FocusScope.of(context).unfocus();

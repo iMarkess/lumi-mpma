@@ -119,8 +119,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                     ),
                     child: Image.asset(
-                      'assets/images/logo_mpma.png',
-                      height: 72,
+                      'assets/images/lumi_logo.png',
+                      height: 84,
                     ),
                   ).animate().fadeIn(duration: 400.ms).scale(
                         begin: const Offset(0.85, 0.85),
