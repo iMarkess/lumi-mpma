@@ -9,7 +9,7 @@ App Flutter nativo. O `.aab` já está pronto e assinado.
 - **Keystore:** `lumi-upload.jks` (senha `LumiMpma#2026`, alias `upload`) — **guarde pra sempre**
 
 ## Falta só (você prepara)
-- **Screenshots** (mín. 2 de celular): abra http://31.97.151.126:3333/web/ no Chrome →
+- **Screenshots** (mín. 2 de celular): abra https://lumimpma.site/web/ no Chrome →
   F12 → modo celular (Ctrl+Shift+M) → Pixel 7 → tire prints da Home, do formulário e do Acompanhar.
 - **Política de privacidade** numa URL pública (obrigatória — app de denúncia). Modelo abaixo.
 
