@@ -32,10 +32,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     
-    // Simulate network delay
-    await new Promise(r => setTimeout(r, 800));
-    
-    const res = login(cpf, password);
+    const res = await login(cpf, password);
     if (res.success) {
       if (res.mustChange) {
         setStep('reset');

@@ -144,14 +144,10 @@ export default function ComplaintForm({ type, steps }: ComplaintFormProps) {
     }
   };
 
-  const handleSubmit = () => {
-    const newProtocol = `MPMA-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const newHash = generateBlockchainHash();
-    setBlockchainHash(newHash);
-    
-    // Create the complaint object
-    addComplaint({
-      id: newProtocol,
+  const handleSubmit = async () => {
+    setBlockchainHash(generateBlockchainHash());
+    // Envia ao backend (ou local) e usa o protocolo retornado.
+    const newProtocol = await addComplaint({
       category: type,
       title: formData.victim_name ? `Denúncia: ${formData.victim_name}` : `Denúncia ${type}`,
       location: formData.location || 'Não informado',
@@ -159,7 +155,6 @@ export default function ComplaintForm({ type, steps }: ComplaintFormProps) {
       priority: formData.is_urgent === 'Sim' ? 'alta' : 'media',
       victim_name: formData.victim_name
     });
-
     setProtocol(newProtocol);
     setIsSubmitted(true);
   };

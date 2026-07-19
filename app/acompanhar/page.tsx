@@ -2,38 +2,56 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, Calendar, Clock, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Search, Calendar, CheckCircle2, ShieldCheck } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import styles from './Acompanhar.module.css';
+import { useAppContext } from '@/context/AppContext';
 
-const mockStatus: any = {
-  active: {
-    protocol: 'MPMA-X82J91',
-    status: 'Em Análise',
-    date: '21/03/2026',
-    category: 'Criança e Adolescente',
-    timeline: [
-      { status: 'Denúncia Recebida', date: '21/03/2026 - 14:20', completed: true },
-      { status: 'Triagem Inicial', date: '21/03/2026 - 15:00', completed: true },
-      { status: 'Encaminhado para Promotoria', date: 'Pendente', completed: false },
-      { status: 'Diligência em Aberto', date: 'Pendente', completed: false },
-    ]
-  }
+const CATEGORY_LABEL: Record<string, string> = {
+  child: 'Criança e Adolescente',
+  elderly: 'Idosos e Vulneráveis',
+  env: 'Meio Ambiente',
+};
+const STATUS_LABEL: Record<string, string> = {
+  recebida: 'Recebida', em_triagem: 'Em Triagem', em_analise: 'Em Análise',
+  'concluída': 'Concluída', rejeitada: 'Rejeitada',
+};
+const STEPS = ['Denúncia Recebida', 'Triagem Inicial', 'Em Análise', 'Concluída'];
+const STEP_INDEX: Record<string, number> = {
+  recebida: 0, em_triagem: 1, em_analise: 2, 'concluída': 3, rejeitada: 3,
 };
 
 export default function AcompanharPage() {
+  const { trackComplaint } = useAppContext();
   const [protocol, setProtocol] = useState('');
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSearch = () => {
-    if (protocol.toUpperCase() === 'MPMA-X82J91') {
-      setResult(mockStatus.active);
-      setError('');
-    } else {
+  const handleSearch = async () => {
+    const q = protocol.trim();
+    if (!q) return;
+    setLoading(true);
+    setError('');
+    const c = await trackComplaint(q);
+    setLoading(false);
+    if (!c) {
       setResult(null);
       setError('Protocolo não encontrado. Verifique o número e tente novamente.');
+      return;
     }
+    const idx = STEP_INDEX[c.status] ?? 0;
+    setResult({
+      protocol: c.id,
+      status: STATUS_LABEL[c.status] || c.status,
+      date: c.date,
+      category: CATEGORY_LABEL[c.category] || c.category,
+      timeline: STEPS.map((s, i) => ({
+        status: s,
+        date: i <= idx ? 'Concluído' : 'Pendente',
+        completed: i <= idx,
+      })),
+    });
   };
 
   return (
@@ -55,7 +73,7 @@ export default function AcompanharPage() {
               onChange={(e) => setProtocol(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
-            <button onClick={handleSearch}><Search size={20} /> Buscar</button>
+            <button onClick={handleSearch} disabled={loading}><Search size={20} /> {loading ? 'Buscando...' : 'Buscar'}</button>
           </div>
           {error && <p className={styles.error}>{error}</p>}
         </div>
