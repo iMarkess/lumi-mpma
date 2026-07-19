@@ -8,6 +8,11 @@ Lê as credenciais de key.properties (criado no workflow).
 f = "app/build.gradle.kts"
 s = open(f, encoding="utf-8").read()
 
+# Idempotência: se já foi patchado, não faz de novo.
+if "keystoreProperties" in s:
+    print("build.gradle.kts já configurado — pulando.")
+    raise SystemExit(0)
+
 if "java.util.Properties" not in s:
     s = "import java.util.Properties\nimport java.io.FileInputStream\n" + s
 

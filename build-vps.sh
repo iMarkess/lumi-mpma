@@ -58,6 +58,7 @@ cd mobile
 
 echo "==> 6/8 Gerar plataforma Android"
 flutter config --android-sdk "$ANDROID_SDK_ROOT" >/dev/null
+rm -rf android   # regenera limpo a cada build (evita patch duplicado)
 flutter create --org br.mp --project-name lumi --platforms=android . >/dev/null
 sed -i 's/android:label="[^"]*"/android:label="LUMI"/' android/app/src/main/AndroidManifest.xml
 # Permite HTTP em claro só para a API do VPS (troque por HTTPS em produção)
