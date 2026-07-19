@@ -355,10 +355,10 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text('LUMI', style: t.headlineSmall),
-          Text('Denúncia Cidadã',
+          Text('com você na proteção da vida',
               style: t.bodySmall, textAlign: TextAlign.center),
           const SizedBox(height: 4),
-          Text('Versão 1.0.2', style: t.labelSmall),
+          Text('Versão 1.0.3', style: t.labelSmall),
           const SizedBox(height: 20),
           Text(
             'A LUMI é um aplicativo independente para registrar denúncias com segurança e sigilo, e acompanhar o andamento pelo número de protocolo. App independente — não é canal oficial de nenhum órgão público.',

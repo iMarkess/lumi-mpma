@@ -15,7 +15,7 @@ class AppUser {
     required this.name,
     required this.role,
     this.cpf,
-    this.institution = 'Denúncia Cidadã',
+    this.institution = 'com você na proteção da vida',
     this.photoUrl,
   });
 

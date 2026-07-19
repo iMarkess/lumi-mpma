@@ -1,7 +1,7 @@
 name: lumi_sentinela
-description: "LUMI - Denúncia Cidadã: registre denúncias com segurança e sigilo e acompanhe pelo protocolo."
+description: "LUMI - com você na proteção da vida: registre denúncias com segurança e sigilo e acompanhe pelo protocolo."
 publish_to: "none"
-version: 1.0.2+3
+version: 1.0.3+4
 
 environment:
   sdk: ">=3.6.0 <4.0.0"
