@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../core/config.dart';
 import '../domain/complaint.dart';
+import 'complaint_repository.dart';
 
 /// Implementação HTTP contra a API real do LUMI (backend no VPS).
 class ApiComplaintRepository implements ComplaintRepository {
