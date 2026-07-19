@@ -41,7 +41,7 @@ export default function PlayStoreBanner() {
           </div>
         </div>
         <div className={styles.visual}>
-          <img src="/images/iconeapp.png" alt="Aplicativo LUMI" />
+          <img src="/images/LUMIOFICIAL.png" alt="Aplicativo LUMI" />
         </div>
       </motion.div>
     </section>
