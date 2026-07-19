@@ -1,0 +1,80 @@
+name: 2 - Build Android (.aab)
+
+# Builda o app Flutter nativo e gera o app-release.aab assinado.
+# Requer os Secrets (Settings → Secrets and variables → Actions):
+#   ANDROID_KEYSTORE_BASE64   (conteúdo de keystore.base64.txt)
+#   ANDROID_STORE_PASSWORD
+#   ANDROID_KEY_PASSWORD
+#   ANDROID_KEY_ALIAS         (ex.: upload)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["mobile/**", ".github/workflows/android.yml"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Gerar plataforma Android
+        working-directory: mobile
+        run: |
+          flutter create --org br.mp --project-name lumi --platforms=android .
+          sed -i 's/android:label="[^"]*"/android:label="LUMI"/' \
+            android/app/src/main/AndroidManifest.xml
+
+      - name: Configurar assinatura
+        working-directory: mobile/android
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PW: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PW: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::Configure os Secrets ANDROID_KEYSTORE_BASE64/STORE_PASSWORD/KEY_PASSWORD/KEY_ALIAS antes de buildar (rode antes o workflow '1 - Gerar chave')."
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > app/upload-keystore.jks
+          {
+            echo "storePassword=$STORE_PW"
+            echo "keyPassword=$KEY_PW"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storeFile=upload-keystore.jks"
+          } > key.properties
+          python3 ../ci/sign_gradle.py
+
+      - name: Dependências
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Ícone + splash
+        working-directory: mobile
+        run: |
+          dart run flutter_launcher_icons || true
+          dart run flutter_native_splash:create || true
+
+      - name: Build AAB (release)
+        working-directory: mobile
+        run: flutter build appbundle --release
+
+      - name: Subir o .aab
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumi-aab
+          path: mobile/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 7
