@@ -4,52 +4,57 @@ import { motion } from 'framer-motion';
 import { Shield, Lock, EyeOff } from 'lucide-react';
 import styles from './TrustSection.module.css';
 
+const FEATURES = [
+  {
+    icon: Shield,
+    title: 'Proteção total',
+    description:
+      'Todo o tráfego é criptografado e a denúncia chega diretamente ao setor responsável, sem intermediários.',
+  },
+  {
+    icon: Lock,
+    title: 'Sigilo absoluto',
+    description:
+      'Seus dados pessoais são tratados no mais alto nível de confidencialidade previsto na LGPD e na lei.',
+  },
+  {
+    icon: EyeOff,
+    title: 'Denúncia anônima',
+    description:
+      'Você decide se quer se identificar. A denúncia anônima tem o mesmo peso e o mesmo acompanhamento.',
+  },
+];
+
 export default function TrustSection() {
-  const features = [
-    {
-      icon: <Shield size={28} />,
-      title: 'Proteção Total',
-      description:
-        'Sistemas blindados com criptografia de ponta para garantir que sua denúncia chegue ao destino com total segurança.',
-    },
-    {
-      icon: <Lock size={28} />,
-      title: 'Sigilo Absoluto',
-      description:
-        'Suas informações pessoais são tratadas com o mais alto nível de confidencialidade previsto em lei.',
-    },
-    {
-      icon: <EyeOff size={28} />,
-      title: 'Denúncia Anônima',
-      description:
-        'Você decide se quer se identificar ou não. O importante é que a justiça seja feita.',
-    },
-  ];
-
   return (
-    <section className={styles.section}>
+    <section className={styles.section} aria-labelledby="confianca-titulo">
       <div className="container">
-        <div className={styles.header}>
+        <header className={styles.header}>
           <span className="eyebrow">Confiança e segurança</span>
-          <h2 className={styles.title}>Sua voz protegida em cada etapa</h2>
-        </div>
+          <h2 id="confianca-titulo" className={styles.title}>
+            Sua voz protegida em cada etapa
+          </h2>
+        </header>
 
-        <div className={styles.grid}>
-          {features.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 24 }}
+        <ul className={styles.grid}>
+          {FEATURES.map(({ icon: Icon, title, description }, i) => (
+            <motion.li
+              key={title}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, margin: '-80px' }}
+              /* 40ms por item: sequência perceptível sem parecer lenta. */
+              transition={{ delay: i * 0.04, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
               className={styles.item}
             >
-              <div className={styles.icon}>{f.icon}</div>
-              <h3 className={styles.cardTitle}>{f.title}</h3>
-              <p className={styles.description}>{f.description}</p>
-            </motion.div>
+              <span className={styles.icon}>
+                <Icon size={26} aria-hidden="true" />
+              </span>
+              <h3 className={styles.itemTitle}>{title}</h3>
+              <p className={styles.description}>{description}</p>
+            </motion.li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );

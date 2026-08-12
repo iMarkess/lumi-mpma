@@ -1,9 +1,15 @@
 # Publicar a LUMI (app NATIVO) na Google Play Store
 
-App Flutter nativo. O `.aab` já está pronto e assinado.
+App Flutter nativo.
+
+> ⚠️ **O `.aab` da versão 1.0.3 está quebrado — instala e não abre.**
+> Foi renomeado para `app-release-1.0.3-QUEBRADO-NAO-SUBIR.aab`. **Não suba.**
+> Causa e correção em `mobile/README.md`. Gere um pacote novo (1.0.4+5) rodando
+> o workflow `android-lumi` no Codemagic; o CI agora reprova sozinho qualquer
+> AAB sem `MainActivity` no dex.
 
 ## Você já tem (na pasta do projeto)
-- **`app-release.aab`** → o pacote que sobe na Play
+- **`.aab` novo** → gerado pelo Codemagic (workflow `android-lumi`)
 - **Ícone 512×512:** `public/icons/icon-512.png`
 - **Feature graphic 1024×500:** `public/store/feature-graphic.png`
 - **Keystore:** `lumi-upload.jks` (senha `LumiMpma#2026`, alias `upload`) — **guarde pra sempre**

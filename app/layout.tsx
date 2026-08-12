@@ -39,6 +39,28 @@ export const metadata: Metadata = {
     title: APP_NAME,
   },
   formatDetection: { telephone: false },
+  metadataBase: new URL("https://lumimpma.site"),
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: APP_NAME,
+    title: "LUMI MPMA — Luz e proteção para quem mais precisa",
+    description: APP_DESCRIPTION,
+    images: [
+      {
+        url: "/store/feature-graphic.png",
+        width: 1024,
+        height: 500,
+        alt: "LUMI — canal oficial de denúncias do Ministério Público do Maranhão",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LUMI MPMA — Luz e proteção para quem mais precisa",
+    description: APP_DESCRIPTION,
+    images: ["/store/feature-graphic.png"],
+  },
   icons: {
     icon: [
       { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },

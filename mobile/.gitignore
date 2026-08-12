@@ -10,6 +10,10 @@ pubspec.lock
 .vscode/
 
 # Android
+# A pasta android/ inteira é gerada no CI (`flutter create`) e normalizada por
+# ci/configure_android.py. Não versionar: editar à mão lá dentro não sobrevive
+# ao próximo build.
+android/
 android/.gradle/
 android/app/debug/
 android/app/profile/

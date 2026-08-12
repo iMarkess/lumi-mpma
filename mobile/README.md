@@ -127,7 +127,30 @@ Não tem Flutter/Android SDK na máquina? Use o `codemagic.yaml` na raiz do repo
    O Codemagic mostra o **SHA-1** — anote (usa no Google + Play).
 4. Rode o workflow **android-lumi** → baixe o `.aab` → suba na Play Console.
 
-Package name fixo: **`br.mp.lumi`** (bate com o OAuth Android do Google).
+Package name fixo: **`br.com.lumi.denuncia`** — é o applicationId já publicado na
+Play. **Não pode mudar**, senão a Play Console rejeita o upload. Ele é definido em
+`ci/configure_android.py` (constante `APPLICATION_ID`), não no `codemagic.yaml`.
+
+### Por que a versão 1.0.3 instalava e não abria
+
+O `flutter build appbundle --release` rodou com AGP 9, que liga R8 com
+`isObfuscationEnabled=true` + `isShrinkingEnabled=true` por padrão. Sem keep-rules,
+o R8 removeu a `MainActivity` e todo o `io.flutter.embedding.android` do
+`classes.dex` (ficou em 586 KB). O manifest continuava apontando para
+`br.com.lumi.denuncia.MainActivity` → `ClassNotFoundException` no launch → o
+Android matava o processo. Instalava, ícone aparecia, abria e fechava na hora.
+
+Correção, em três camadas:
+
+1. `ci/configure_android.py` força `minifyEnabled=false` e `shrinkResources=false`
+   no release, e escreve `proguard-rules.pro` caso alguém religue no futuro.
+2. A `MainActivity` passou a ser referenciada como `.MainActivity` (relativa) no
+   manifest — nunca mais aponta pra um package inexistente.
+3. `ci/verify_aab.py` roda depois do build e **quebra o CI** se a `MainActivity`,
+   o embedding do Flutter ou as libs nativas não estiverem no pacote.
+
+O `.aab` antigo foi renomeado para `app-release-1.0.3-QUEBRADO-NAO-SUBIR.aab`
+na raiz do repositório. Não suba esse arquivo.
 
 ## Login com Google NATIVO (SHA-1)
 
@@ -139,7 +162,7 @@ Ordem correta (o SHA-1 só existe após ter a chave de assinatura):
    - Play Console: **Configuração → Integridade do app → Assinatura de apps**
      (mostra SHA-1 da chave de upload e da chave do app).
 3. Google Cloud → **Credenciais → ID do cliente OAuth → Android**:
-   - Nome do pacote: `br.mp.lumi`
+   - Nome do pacote: `br.com.lumi.denuncia`
    - SHA-1: cole o do passo 2
 4. (Para receber `idToken` e verificar no backend) crie também um **OAuth Web**
    e passe o Web Client ID como `serverClientId` em

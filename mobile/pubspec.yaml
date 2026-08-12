@@ -1,7 +1,9 @@
 name: lumi_sentinela
 description: "LUMI - com você na proteção da vida: registre denúncias com segurança e sigilo e acompanhe pelo protocolo."
 publish_to: "none"
-version: 1.0.3+4
+# O versionCode (o número depois do +) precisa ser MAIOR que o último enviado
+# à Play. Último publicado: 4 (1.0.3). Incremente a cada upload.
+version: 1.0.4+5
 
 environment:
   sdk: ">=3.6.0 <4.0.0"

@@ -59,7 +59,7 @@ export default function AdminLayout({
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
           <Image 
-            src="/images/Gemini_Generated_Image_gjyowhgjyowhgjyo-Photoroom.png" 
+            src="/images/logo-mpma.png"
             alt="MPMA" 
             width={48} 
             height={48} 

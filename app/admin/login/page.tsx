@@ -101,7 +101,7 @@ export default function LoginPage() {
 
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <Image 
-            src="/images/Gemini_Generated_Image_gjyowhgjyowhgjyo-Photoroom.png" 
+            src="/images/logo-mpma.png"
             alt="MPMA" 
             width={100} 
             height={100} 

@@ -4,10 +4,15 @@
 # Como usar:
 # 1. Suba este repositório no GitHub/GitLab/Bitbucket.
 # 2. Em https://codemagic.io conecte o repositório.
-# 3. Em Settings → Code signing (Android), crie/adicione um keystore com
-#    referência "lumi_keystore" (o Codemagic mostra o SHA-1 depois — use no
-#    OAuth Android do Google e no Play Console).
+# 3. Em Settings → Code signing (Android), adicione o keystore `lumi-upload.jks`
+#    com referência "lumi_keystore" (alias `upload`). O Codemagic mostra o SHA-1
+#    depois — use no OAuth Android do Google e no Play Console.
 # 4. Rode o workflow "android-lumi". Baixe o .aab e suba na Play Console.
+#
+# ATENÇÃO — package name: br.com.lumi.denuncia
+# É o applicationId JÁ PUBLICADO na Play. Não pode mudar nunca mais: qualquer
+# outro valor faz a Play Console rejeitar o upload. Ele é fixado em
+# mobile/ci/configure_android.py, não aqui.
 
 workflows:
   android-lumi:
@@ -16,34 +21,51 @@ workflows:
     environment:
       flutter: stable
       android_signing:
-        - lumi_keystore        # referência criada em Code signing
+        - lumi_keystore # referência criada em Code signing
       vars:
-        PACKAGE_NAME: "br.mp.lumi"
+        PACKAGE_NAME: "br.com.lumi.denuncia"
     scripts:
       - name: Gerar plataformas nativas (android/)
         script: |
           cd mobile
-          flutter create --org br.mp --project-name lumi --platforms=android .
-          # Nome exibido do app = LUMI
-          sed -i 's/android:label="[^"]*"/android:label="LUMI"/' \
-            android/app/src/main/AndroidManifest.xml
+          # A pasta android/ não é versionada: o template é gerado aqui e depois
+          # normalizado por ci/configure_android.py. A org passada aqui é
+          # irrelevante — o script reescreve namespace/applicationId.
+          flutter create --platforms=android --org br.com.lumi .
+
+      - name: Normalizar configuração Android (package, assinatura, minify)
+        script: |
+          cd mobile
+          python3 ci/configure_android.py
+
       - name: Dependências
         script: |
           cd mobile
           flutter pub get
+
       - name: Ícone + splash
         script: |
           cd mobile
           dart run flutter_launcher_icons || true
           dart run flutter_native_splash:create || true
+          # O flutter_native_splash reescreve o AndroidManifest e o styles.xml.
+          # Reaplica o nosso patch por cima para não perder label/permissões.
+          python3 ci/configure_android.py
+
       - name: Analisar
         script: |
           cd mobile
           flutter analyze || true
+
       - name: Build AAB (release)
         script: |
           cd mobile
           flutter build appbundle --release
+
+      - name: Verificar o AAB (bloqueia pacote que não abre)
+        script: |
+          cd mobile
+          python3 ci/verify_aab.py build/app/outputs/bundle/release/app-release.aab
     artifacts:
       - mobile/build/**/outputs/**/*.aab
       - mobile/build/**/outputs/**/mapping.txt
