@@ -3,7 +3,7 @@
 
     python3 ci/verify_aab.py build/app/outputs/bundle/release/app-release.aab
 
-Existe por causa da 1.0.3: o AAB subiu, passou na revisao, instalou — e nunca
+Existe por causa da 1.0.3: o AAB subiu, passou na revisao, instalou - e nunca
 abriu, porque o R8 tinha apagado a MainActivity e o embedding Flutter do dex.
 Nada no build falhou. Este script transforma esse tipo de falha silenciosa em
 erro de CI.
@@ -54,7 +54,7 @@ def main() -> None:
                 problems.append(f"biblioteca nativa ausente: {lib}")
 
         if not any(n.startswith("base/assets/flutter_assets/") for n in names):
-            problems.append("base/assets/flutter_assets/ ausente — bundle sem os assets do Flutter")
+            problems.append("base/assets/flutter_assets/ ausente - bundle sem os assets do Flutter")
 
         dex_names = sorted(n for n in names if n.startswith("base/dex/") and n.endswith(".dex"))
         if not dex_names:
@@ -66,38 +66,40 @@ def main() -> None:
 
             if b"MainActivity" not in blob:
                 problems.append(
-                    "MainActivity NAO esta no dex — o app vai instalar e fechar no launch "
+                    "MainActivity NAO esta no dex - o app vai instalar e fechar no launch "
                     "(ClassNotFoundException). Foi exatamente o bug da 1.0.3."
                 )
             if b"io/flutter/embedding/android" not in blob:
                 problems.append(
-                    "classes de io.flutter.embedding.android ausentes no dex — "
+                    "classes de io.flutter.embedding.android ausentes no dex - "
                     "R8 comeu o embedding do Flutter. Confira minifyEnabled=false."
                 )
             if APPLICATION_ID.replace(".", "/").encode() not in blob:
                 problems.append(f"nenhuma classe do package {APPLICATION_ID} no dex")
             if total < MIN_DEX_BYTES:
                 problems.append(
-                    f"dex com apenas {total / 1e6:.2f} MB — pequeno demais para este app; "
+                    f"dex com apenas {total / 1e6:.2f} MB - pequeno demais para este app; "
                     "sinal classico de shrinking agressivo"
                 )
 
         if "BUNDLE-METADATA/com.android.tools/r8.json" in names:
             r8 = z.read("BUNDLE-METADATA/com.android.tools/r8.json").decode("utf-8", "replace")
             if '"isObfuscationEnabled":true' in r8:
-                problems.append("R8 com ofuscacao LIGADA no release — desligue (minifyEnabled=false)")
+                problems.append("R8 com ofuscacao LIGADA no release - desligue (minifyEnabled=false)")
 
+    # ASCII puro: o console do Windows nao renderiza os simbolos e o log do CI
+    # fica ilegivel justamente quando alguem precisa ler o erro.
     for n in notes:
-        print(f"  · {n}")
+        print(f"  - {n}")
 
     if problems:
         print("\nAAB REPROVADO:\n", file=sys.stderr)
         for p in problems:
-            print(f"  ✗ {p}", file=sys.stderr)
+            print(f"  [X] {p}", file=sys.stderr)
         print("\nNAO suba este pacote na Play Console.", file=sys.stderr)
         raise SystemExit(1)
 
-    print(f"\nAAB aprovado — {aab.name} pode subir na Play Console.")
+    print(f"\nAAB aprovado - {aab.name} pode subir na Play Console.")
 
 
 if __name__ == "__main__":

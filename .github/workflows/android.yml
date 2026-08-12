@@ -1,17 +1,24 @@
 name: 2 - Build Android (.aab)
 
-# Builda o app Flutter nativo e gera o app-release.aab assinado.
-# Requer os Secrets (Settings → Secrets and variables → Actions):
-#   ANDROID_KEYSTORE_BASE64   (conteúdo de keystore.base64.txt)
+# Builda o app Flutter nativo e gera o app-release.aab assinado, de graça,
+# nos runners do GitHub. Não precisa de Codemagic.
+#
+# Secrets necessários (Settings -> Secrets and variables -> Actions):
+#   ANDROID_KEYSTORE_BASE64   conteúdo do lumi-upload.jks em base64
 #   ANDROID_STORE_PASSWORD
 #   ANDROID_KEY_PASSWORD
-#   ANDROID_KEY_ALIAS         (ex.: upload)
+#   ANDROID_KEY_ALIAS         (upload)
+#
+# A chave PRECISA ser a mesma que assinou a 1.0.3, senão a Play recusa o
+# upload com "assinado com a chave errada".
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["mobile/**", ".github/workflows/android.yml"]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/android.yml"
 
 jobs:
   build:
@@ -30,14 +37,33 @@ jobs:
         with:
           channel: stable
 
+      - name: Conferir os Secrets antes de gastar 15 minutos de build
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PW: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PW: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          missing=""
+          [ -z "$KEYSTORE_B64" ] && missing="$missing ANDROID_KEYSTORE_BASE64"
+          [ -z "$STORE_PW" ]     && missing="$missing ANDROID_STORE_PASSWORD"
+          [ -z "$KEY_PW" ]       && missing="$missing ANDROID_KEY_PASSWORD"
+          [ -z "$KEY_ALIAS" ]    && missing="$missing ANDROID_KEY_ALIAS"
+          if [ -n "$missing" ]; then
+            echo "::error::Faltam estes Secrets:$missing — cadastre em Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "Secrets presentes."
+
       - name: Gerar plataforma Android
         working-directory: mobile
         run: |
-          flutter create --org br.mp --project-name lumi --platforms=android .
-          sed -i 's/android:label="[^"]*"/android:label="LUMI"/' \
-            android/app/src/main/AndroidManifest.xml
+          # A org passada aqui é irrelevante: ci/configure_android.py reescreve
+          # namespace e applicationId para br.com.lumi.denuncia, que é o package
+          # já publicado na Play e não pode mudar.
+          flutter create --platforms=android --org br.com.lumi .
 
-      - name: Configurar assinatura
+      - name: Instalar a chave de assinatura
         working-directory: mobile/android
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -45,10 +71,6 @@ jobs:
           KEY_PW: ${{ secrets.ANDROID_KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          if [ -z "$KEYSTORE_B64" ]; then
-            echo "::error::Configure os Secrets ANDROID_KEYSTORE_BASE64/STORE_PASSWORD/KEY_PASSWORD/KEY_ALIAS antes de buildar (rode antes o workflow '1 - Gerar chave')."
-            exit 1
-          fi
           echo "$KEYSTORE_B64" | base64 -d > app/upload-keystore.jks
           {
             echo "storePassword=$STORE_PW"
@@ -56,7 +78,13 @@ jobs:
             echo "keyAlias=$KEY_ALIAS"
             echo "storeFile=upload-keystore.jks"
           } > key.properties
-          python3 ../ci/sign_gradle.py
+          echo "Impressão digital da chave de upload:"
+          keytool -list -v -keystore app/upload-keystore.jks \
+            -alias "$KEY_ALIAS" -storepass "$STORE_PW" | grep -E "SHA1|SHA256" || true
+
+      - name: Normalizar configuração Android (package, assinatura, minify)
+        working-directory: mobile
+        run: python3 ci/configure_android.py
 
       - name: Dependências
         working-directory: mobile
@@ -67,14 +95,30 @@ jobs:
         run: |
           dart run flutter_launcher_icons || true
           dart run flutter_native_splash:create || true
+          # Os dois reescrevem o AndroidManifest; reaplica o patch por cima
+          # para não perder label, permissões e a MainActivity relativa.
+          python3 ci/configure_android.py
 
       - name: Build AAB (release)
         working-directory: mobile
         run: flutter build appbundle --release
+
+      - name: Verificar o AAB (reprova pacote que não abre)
+        working-directory: mobile
+        run: python3 ci/verify_aab.py build/app/outputs/bundle/release/app-release.aab
 
       - name: Subir o .aab
         uses: actions/upload-artifact@v4
         with:
           name: lumi-aab
           path: mobile/build/app/outputs/bundle/release/app-release.aab
-          retention-days: 7
+          retention-days: 30
+
+      - name: Subir o mapping (para desofuscar stack traces, se algum dia religar o R8)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumi-mapping
+          path: mobile/build/app/outputs/mapping/release/mapping.txt
+          if-no-files-found: ignore
+          retention-days: 30
