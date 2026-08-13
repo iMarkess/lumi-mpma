@@ -56,3 +56,6 @@ next-env.d.ts
 backend/downloads/
 
 .puppeteer_data/
+
+# Pacote pronto para a Play (gerado por mobile/build-local.ps1)
+*.aab
