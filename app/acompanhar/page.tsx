@@ -68,7 +68,7 @@ export default function AcompanharPage() {
           <div className={styles.searchBar}>
             <input 
               type="text" 
-              placeholder="Ex: MPMA-XXXXXX" 
+              placeholder="Ex: LUMI-XXXXXX" 
               value={protocol}
               onChange={(e) => setProtocol(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}

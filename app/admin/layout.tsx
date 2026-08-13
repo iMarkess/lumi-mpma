@@ -59,8 +59,8 @@ export default function AdminLayout({
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
           <Image 
-            src="/images/logo-mpma.png"
-            alt="MPMA" 
+            src="/images/lumi_logo.png"
+            alt="LUMI" 
             width={48} 
             height={48} 
             className={styles.sidebarMpma}

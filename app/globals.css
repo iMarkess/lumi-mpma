@@ -1,7 +1,7 @@
 /* =========================================================================
-   LUMI MPMA — Sistema de design
+   LUMI — Sistema de design
    Direção: confiança institucional. Silencioso, alto contraste, muito ar.
-   Azul MPMA carrega a instituição; vermelho é reservado para ação e urgência,
+   Azul carrega a base institucional; vermelho é reservado para ação e urgência,
    nunca para decoração — se tudo é urgente, nada é.
    ========================================================================= */
 
@@ -9,10 +9,10 @@
   color-scheme: light;
 
   /* ===== MARCA ===== */
-  --primary: #E62310;        /* Vermelho MPMA — só ação/urgência */
+  --primary: #E62310;        /* Vermelho — só ação/urgência */
   --primary-light: #FF5A47;
   --primary-dark: #B81A0B;
-  --secondary: #00458E;      /* Azul MPMA — cor institucional base */
+  --secondary: #00458E;      /* Azul — cor base da marca */
   --secondary-light: #1E6FC4;
   --secondary-dark: #002D5C;
   --accent: #B8860B;         /* Ouro escurecido: 4.5:1 sobre branco */

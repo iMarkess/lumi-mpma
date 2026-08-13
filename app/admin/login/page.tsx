@@ -101,8 +101,8 @@ export default function LoginPage() {
 
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <Image 
-            src="/images/logo-mpma.png"
-            alt="MPMA" 
+            src="/images/lumi_logo.png"
+            alt="LUMI" 
             width={100} 
             height={100} 
             style={{ marginBottom: 24, filter: 'drop-shadow(0 6px 16px rgba(0,69,142,0.3))' }}
@@ -110,7 +110,7 @@ export default function LoginPage() {
           {step === 'login' ? (
             <>
               <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 8 }}>Portal Administrativo</h1>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Acesse o painel administrativo do MPMA</p>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>Acesse o painel administrativo</p>
             </>
           ) : (
             <>

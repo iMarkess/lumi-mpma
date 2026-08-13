@@ -68,10 +68,10 @@ export default function CadastroPage() {
       <div className={styles.hero} />
       <div className={styles.content}>
         <div className={styles.logoBox}>
-          <img className={styles.logo} src="/images/lumi_logo.png" alt="MPMA" />
+          <img className={styles.logo} src="/images/lumi_logo.png" alt="LUMI" />
         </div>
         <div className={styles.brandName}>Criar conta</div>
-        <div className={styles.brandSub}>Rápido e seguro · Ministério Público do Maranhão</div>
+        <div className={styles.brandSub}>Rápido e seguro · Sem burocracia</div>
 
         <form className={styles.card} onSubmit={submit}>
           <h1 className={styles.title}>Cadastro</h1>

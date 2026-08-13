@@ -91,9 +91,16 @@
 }
 
 .logo {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background: var(--grad-brand);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px rgba(0, 69, 142, 0.6);
 }
 
 .sep {
@@ -110,9 +117,21 @@
 }
 
 .brandTagline {
+  margin-bottom: var(--space-4);
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--text-muted);
+}
+
+/* Aviso legal: precisa ser legível de verdade, não letra miúda escondida. */
+.disclaimer {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-soft);
 }
 
 .links {

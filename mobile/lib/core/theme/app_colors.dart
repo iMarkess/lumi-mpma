@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Paleta oficial MPMA — usada para gerar os [ColorScheme] claro e escuro.
+/// Paleta da marca — usada para gerar os [ColorScheme] claro e escuro.
 abstract class AppColors {
   // Marca
-  static const Color primary = Color(0xFF00458E); // MPMA Azul
+  static const Color primary = Color(0xFF00458E); // Azul
   static const Color primaryLight = Color(0xFF1E6FC4);
   static const Color primaryDark = Color(0xFF002D5C);
 
-  static const Color secondary = Color(0xFFE62310); // MPMA Vermelho
+  static const Color secondary = Color(0xFFE62310); // Vermelho
   static const Color secondaryLight = Color(0xFFFF5A47);
   static const Color secondaryDark = Color(0xFFB81A0B);
 

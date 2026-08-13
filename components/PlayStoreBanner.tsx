@@ -27,7 +27,7 @@ export default function PlayStoreBanner() {
           <div className={styles.content}>
             <p className={styles.eyebrow}>
               <ShieldCheck size={14} aria-hidden="true" />
-              App oficial do MPMA
+              Disponível para Android
             </p>
             <h2 id="baixar-titulo" className={styles.title}>
               Leve a Lumi no bolso

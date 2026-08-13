@@ -1,12 +1,12 @@
-# LUMI MPMA — App Flutter (Android / Play Store)
+# LUMI — App Flutter (Android / Play Store)
 
-App nativo Material Design 3 do Ministério Público do Maranhão. Redesenho
+App nativo Material Design 3 do LUMI, canal independente de denúncias. Redesenho
 completo mobile-first — **não** é o site num WebView. Roda 100% com dados mock;
 a API real do LUMI pluga trocando uma classe de repositório.
 
 ## Stack
 
-- **Flutter** + Material 3 (tema claro/escuro MPMA)
+- **Flutter** + Material 3 (tema claro/escuro)
 - **Riverpod** (estado) · **go_router** (navegação com bottom nav)
 - **google_fonts** (Lexend + Inter) · **flutter_animate** (micro animações 60fps)
 - **shimmer** (skeleton) · **local_auth** (biometria) · **shared_preferences** (tema/sessão)

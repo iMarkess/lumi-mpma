@@ -87,7 +87,7 @@ export default function AppHome() {
       {/* Top bar */}
       <header className={styles.topbar}>
         <div className={styles.identity}>
-          <img className={styles.logo} src="/images/lumi_logo.png" alt="MPMA" />
+          <img className={styles.logo} src="/images/lumi_logo.png" alt="LUMI" />
           <div>
             <div className={styles.eyebrow}>{greeting()},</div>
             <div className={styles.name}>{firstName}</div>
@@ -136,7 +136,7 @@ export default function AppHome() {
           <div className={styles.heroChips}>
             <span className={styles.heroChip}><ShieldCheck size={12} /> Sigilo</span>
             <span className={styles.heroChip}><EyeOff size={12} /> Anônimo</span>
-            <span className={styles.heroChip}><BadgeCheck size={12} /> Oficial</span>
+            <span className={styles.heroChip}><BadgeCheck size={12} /> Sigilo garantido</span>
           </div>
         </div>
       </motion.section>
@@ -249,7 +249,7 @@ export default function AppHome() {
       </div>
 
       <footer className={styles.foot}>
-        Ministério Público do Estado do Maranhão · LUMI
+        LUMI · com você na proteção da vida
       </footer>
     </main>
   );

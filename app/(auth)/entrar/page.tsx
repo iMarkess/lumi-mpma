@@ -46,10 +46,10 @@ export default function EntrarPage() {
       <div className={styles.hero} />
       <div className={styles.content}>
         <div className={styles.logoBox}>
-          <img className={styles.logo} src="/images/lumi_logo.png" alt="MPMA" />
+          <img className={styles.logo} src="/images/lumi_logo.png" alt="LUMI" />
         </div>
         <div className={styles.brandName}>LUMI</div>
-        <div className={styles.brandSub}>Ministério Público do Maranhão</div>
+        <div className={styles.brandSub}>com você na proteção da vida</div>
 
         <form className={styles.card} onSubmit={submit}>
           <h1 className={styles.title}>Entrar</h1>

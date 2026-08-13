@@ -32,7 +32,7 @@ export default function Hero() {
           <p className={styles.badge}>
             <span className="status-dot" aria-hidden="true" />
             <ShieldCheck size={15} aria-hidden="true" />
-            Plataforma oficial · MPMA
+            Canal independente · Atendimento 24h
           </p>
 
           {/* Mascote em telas estreitas: entra antes do título, sem duplicar
@@ -40,7 +40,7 @@ export default function Hero() {
           <div className={styles.mobileMascot}>
             <Image
               src="/images/lumi-mascote.png"
-              alt="Lumi, assistente virtual do MPMA"
+              alt="Lumi, assistente virtual do aplicativo"
               width={682}
               height={1024}
               className={styles.mobileMascotImg}

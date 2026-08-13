@@ -6,10 +6,10 @@ export const dynamic = 'force-static';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'LUMI MPMA',
+    name: 'LUMI — com você na proteção da vida',
     short_name: 'LUMI',
     description:
-      'Plataforma oficial do Ministério Público do Maranhão para denúncias e proteção de direitos. Denuncie de forma segura e acompanhe seu protocolo.',
+      'Canal independente para registrar denúncias de violência e violação de direitos com sigilo, e acompanhar o andamento por protocolo.',
     lang: 'pt-BR',
     dir: 'ltr',
     start_url: '/app?source=pwa',
@@ -19,7 +19,9 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'portrait',
     background_color: '#F6F8FC',
     theme_color: '#00458E',
-    categories: ['government', 'social', 'utilities'],
+    // Sem 'government': o LUMI não é um serviço público. Essa categoria é um
+    // dos sinais que fazem a Play exigir conta de organização.
+    categories: ['social', 'utilities', 'lifestyle'],
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

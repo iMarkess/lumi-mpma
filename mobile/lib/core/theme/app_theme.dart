@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_typography.dart';
 
-/// Temas Material 3 (claro/escuro) com a identidade MPMA.
+/// Temas Material 3 (claro/escuro) com a identidade da marca.
 abstract class AppTheme {
   static ThemeData get light => _build(Brightness.light);
   static ThemeData get dark => _build(Brightness.dark);

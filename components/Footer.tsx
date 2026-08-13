@@ -1,8 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, ExternalLink } from 'lucide-react';
+import { ArrowRight, ExternalLink, Sparkle } from 'lucide-react';
 import styles from './Footer.module.css';
 
 /*
@@ -10,7 +9,9 @@ import styles from './Footer.module.css';
   institucional custa confiança, e a política de privacidade precisa ficar
   alcançável de qualquer página (exigência da Play Store).
 */
-const COLUMNS = [
+type FooterLink = { href: string; label: string; external?: boolean };
+
+const COLUMNS: Array<{ heading: string; links: FooterLink[] }> = [
   {
     heading: 'Serviços',
     links: [
@@ -28,10 +29,10 @@ const COLUMNS = [
     ],
   },
   {
-    heading: 'Institucional',
+    heading: 'Sobre',
     links: [
-      { href: 'https://www.mpma.mp.br', label: 'Site do MPMA', external: true },
-      { href: '/admin', label: 'Painel do servidor' },
+      { href: '/#orientacoes', label: 'Como funciona' },
+      { href: '/admin', label: 'Painel da equipe' },
     ],
   },
 ];
@@ -58,20 +59,22 @@ export default function Footer() {
         <div className={styles.top}>
           <div className={styles.brand}>
             <div className={styles.logoRow}>
-              <Image
-                src="/images/logo-mpma.png"
-                alt=""
-                width={256}
-                height={256}
-                className={styles.logo}
-                loading="lazy"
-              />
+              <span className={styles.logo} aria-hidden="true">
+                <Sparkle size={20} strokeWidth={2.5} />
+              </span>
               <span className={styles.sep} aria-hidden="true" />
-              <span className={styles.brandName}>LUMI · MPMA</span>
+              <span className={styles.brandName}>LUMI</span>
             </div>
             <p className={styles.brandTagline}>
-              Plataforma oficial de auxílio à denúncia e proteção de direitos
-              fundamentais no Estado do Maranhão.
+              Canal de acolhimento e encaminhamento de denúncias de violência e
+              violação de direitos. Com você na proteção da vida.
+            </p>
+            {/* Declaração explícita de independência: o app já foi retirado da
+                Play por ter sido lido como serviço de governo. */}
+            <p className={styles.disclaimer}>
+              O LUMI é um serviço independente. Não é um site do governo e não
+              representa o Ministério Público nem qualquer órgão oficial. As
+              denúncias recebidas são encaminhadas aos canais competentes.
             </p>
           </div>
 
@@ -107,8 +110,7 @@ export default function Footer() {
           {/* O ano é calculado no build (output: 'export') e recalculado no
               cliente — suprime o aviso na virada do ano. */}
           <p suppressHydrationWarning>
-            © {new Date().getFullYear()} Ministério Público do Estado do Maranhão
-            — Todos os direitos reservados.
+            © {new Date().getFullYear()} LUMI — Todos os direitos reservados.
           </p>
           <p className={styles.emergencyNote}>
             Emergência: <a href="tel:190">190</a> · Direitos Humanos:{' '}

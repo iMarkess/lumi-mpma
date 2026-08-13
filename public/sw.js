@@ -1,4 +1,4 @@
-/* LUMI MPMA — Service Worker
+/* LUMI — Service Worker
  * Estratégia:
  *  - navegação (HTML): network-first, cai pra cache, depois offline.html
  *  - assets estáticos (_next, imagens, ícones, fontes): stale-while-revalidate
@@ -95,9 +95,9 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (e) {
-    data = { title: 'LUMI MPMA', body: event.data && event.data.text() };
+    data = { title: 'LUMI', body: event.data && event.data.text() };
   }
-  const title = data.title || 'LUMI MPMA';
+  const title = data.title || 'LUMI';
   const options = {
     body: data.body || 'Você tem uma atualização na sua denúncia.',
     icon: data.icon || '/icons/icon-192.png',

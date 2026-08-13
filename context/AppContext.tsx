@@ -52,9 +52,9 @@ const initialUsers: User[] = [
 ];
 
 const initialComplaints: Complaint[] = [
-  { id: 'MPMA-X82J91', category: 'child', title: 'Possível negligência em escola', location: 'São Luís', status: 'recebida', priority: 'alta', date: 'Hoje, 14:20', description: 'Relato de negligência sistemática.' },
-  { id: 'MPMA-A72K12', category: 'env', title: 'Queimada irregular em terreno', location: 'Imperatriz', status: 'em_triagem', priority: 'media', date: 'Hoje, 09:15', description: 'Fogo em área de proteção.' },
-  { id: 'MPMA-B33L90', category: 'elderly', title: 'Maus-tratos por familiar', location: 'Caxias', status: 'em_analise', priority: 'alta', date: 'Ontem, 21:00', description: 'Idoso em situação de abandono.' },
+  { id: 'LUMI-X82J91', category: 'child', title: 'Possível negligência em escola', location: 'São Luís', status: 'recebida', priority: 'alta', date: 'Hoje, 14:20', description: 'Relato de negligência sistemática.' },
+  { id: 'LUMI-A72K12', category: 'env', title: 'Queimada irregular em terreno', location: 'Imperatriz', status: 'em_triagem', priority: 'media', date: 'Hoje, 09:15', description: 'Fogo em área de proteção.' },
+  { id: 'LUMI-B33L90', category: 'elderly', title: 'Maus-tratos por familiar', location: 'Caxias', status: 'em_analise', priority: 'alta', date: 'Ontem, 21:00', description: 'Idoso em situação de abandono.' },
 ];
 
 const ROLE_MAP: Record<string, Role> = {
@@ -169,7 +169,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     const now = new Date();
     const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const id = nc.id || `MPMA-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const id = nc.id || `LUMI-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const complaint: Complaint = {
       id, category: nc.category || 'child', title: nc.title || 'Nova Denúncia',
       location: nc.location || 'Não informado', status: 'recebida',

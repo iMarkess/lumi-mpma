@@ -44,9 +44,16 @@
 }
 
 .logoMark {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background: var(--grad-brand);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px rgba(0, 69, 142, 0.6);
   transition: transform var(--dur-slow) var(--ease-spring);
 }
 

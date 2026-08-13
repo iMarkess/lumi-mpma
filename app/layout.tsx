@@ -22,15 +22,17 @@ const lexend = Lexend({
   display: "swap",
 });
 
-const APP_NAME = "LUMI MPMA";
+// O LUMI é um serviço independente. Nenhum texto aqui pode sugerir que é um
+// canal de governo: foi essa leitura que tirou o app da Play em 19/07/2026.
+const APP_NAME = "LUMI";
 const APP_DESCRIPTION =
-  "Plataforma digital oficial do Ministério Público do Estado do Maranhão para denúncias e proteção de direitos.";
+  "Canal independente para registrar denúncias de violência e violação de direitos com sigilo, e acompanhar o andamento por protocolo.";
 
 export const metadata: Metadata = {
   applicationName: APP_NAME,
   title: {
-    default: "LUMI MPMA - Conectando o Maranhão à Justiça e Proteção",
-    template: "%s · LUMI MPMA",
+    default: "LUMI — com você na proteção da vida",
+    template: "%s · LUMI",
   },
   description: APP_DESCRIPTION,
   appleWebApp: {
@@ -44,20 +46,20 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     siteName: APP_NAME,
-    title: "LUMI MPMA — Luz e proteção para quem mais precisa",
+    title: "LUMI — Luz e proteção para quem mais precisa",
     description: APP_DESCRIPTION,
     images: [
       {
         url: "/store/feature-graphic.png",
         width: 1024,
         height: 500,
-        alt: "LUMI — canal oficial de denúncias do Ministério Público do Maranhão",
+        alt: "LUMI — canal independente de denúncias",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LUMI MPMA — Luz e proteção para quem mais precisa",
+    title: "LUMI — Luz e proteção para quem mais precisa",
     description: APP_DESCRIPTION,
     images: ["/store/feature-graphic.png"],
   },

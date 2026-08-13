@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, Info, Lock, ArrowRight } from 'lucide-react';
+import { Home, Search, Info, Lock, ArrowRight, Sparkle } from 'lucide-react';
 import styles from './Navbar.module.css';
 
 // `route` é a rota que marca o item como página atual. Links de âncora não
@@ -31,18 +30,15 @@ export default function Navbar() {
   return (
     <header className={`${styles.nav} ${scrolled ? styles.scrolled : ''}`}>
       <div className={`${styles.inner} container`}>
-        <Link href="/" className={styles.logo} aria-label="LUMI MPMA — página inicial">
-          <Image
-            src="/images/logo-mpma.png"
-            alt=""
-            width={256}
-            height={256}
-            className={styles.logoMark}
-            priority
-          />
+        <Link href="/" className={styles.logo} aria-label="LUMI — página inicial">
+          {/* Marca tipográfica. O brasão institucional saiu daqui: o LUMI é um
+              canal independente e não pode se apresentar como órgão público. */}
+          <span className={styles.logoMark} aria-hidden="true">
+            <Sparkle size={20} strokeWidth={2.5} />
+          </span>
           <span className={styles.logoText}>
             <span className={styles.logoName}>LUMI</span>
-            <span className={styles.logoOrg}>Ministério Público do Maranhão</span>
+            <span className={styles.logoOrg}>com você na proteção da vida</span>
           </span>
         </Link>
 
