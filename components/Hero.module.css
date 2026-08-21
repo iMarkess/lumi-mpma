@@ -114,13 +114,13 @@
   color: var(--on-ink);
 }
 
-/* O gradiente cai só na segunda linha: destaque tem que ser escasso. */
+/*
+  Branco sólido, sem gradiente. O degradê deixava "mais" quase apagado contra
+  o fundo escuro — perdia legibilidade justo no meio da frase principal.
+  Branco puro sobre --ink-900 dá 16:1.
+*/
 .titleAccent {
-  background: linear-gradient(100deg, #7FB2FF 0%, #C7D9FF 40%, #FF8A7A 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  color: #FFFFFF;
 }
 
 .description {
