@@ -1,64 +1,92 @@
 .hero {
   position: relative;
-  display: flex;
-  align-items: center;
-  /* Reserva a altura da navbar fixa em vez de chutar um padding grande. */
-  padding-block: calc(var(--nav-h) + var(--space-16)) var(--space-20);
-  background: linear-gradient(180deg, #FFFFFF 0%, #F4F7FC 58%, #EAF0F9 100%);
+  padding-block: calc(var(--nav-h) + var(--space-20)) var(--space-16);
+  background: var(--grad-ink-deep);
+  color: var(--on-ink);
   overflow: hidden;
   isolation: isolate;
+}
+
+/* Emenda com a seção clara seguinte, para o corte não ficar duro. */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 88px;
+  background: linear-gradient(180deg, transparent, var(--bg-deep));
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* ===== Fundo ===== */
 .bg {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: -2;
   overflow: hidden;
 }
 
-.auroraBlue,
-.auroraRed {
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 20%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 20%, transparent 75%);
+}
+
+.blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(96px);
+  filter: blur(110px);
   will-change: transform;
 }
 
-.auroraBlue {
-  width: min(46rem, 90vw);
+.blobBlue {
+  width: min(48rem, 95vw);
   aspect-ratio: 1;
-  top: -18%;
-  left: -12%;
-  background: radial-gradient(circle, rgba(30, 111, 196, 0.38), transparent 68%);
-  opacity: 0.5;
-  animation: aurora-drift 22s ease-in-out infinite;
+  top: -26%;
+  left: -14%;
+  background: radial-gradient(circle, rgba(30, 111, 196, 0.55), transparent 68%);
+  opacity: 0.55;
+  animation: aurora-drift 24s ease-in-out infinite;
 }
 
-.auroraRed {
-  width: min(30rem, 70vw);
+.blobRed {
+  width: min(34rem, 80vw);
   aspect-ratio: 1;
-  bottom: -22%;
-  right: -8%;
-  background: radial-gradient(circle, rgba(230, 35, 16, 0.28), transparent 68%);
-  opacity: 0.34;
-  animation: aurora-drift 28s ease-in-out infinite reverse;
+  right: -12%;
+  bottom: -18%;
+  background: radial-gradient(circle, rgba(230, 35, 16, 0.42), transparent 68%);
+  opacity: 0.4;
+  animation: aurora-drift 30s ease-in-out infinite reverse;
+}
+
+/* Feixe de luz descendo atrás da Lumi — o "LUMI" literal. */
+.beam {
+  position: absolute;
+  top: -18%;
+  right: 14%;
+  width: 30rem;
+  height: 110%;
+  background: linear-gradient(180deg, rgba(160, 200, 255, 0.16), transparent 62%);
+  filter: blur(46px);
+  transform: rotate(9deg);
 }
 
 /* ===== Grade ===== */
 .container {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  align-items: center;
-  gap: var(--space-12);
   position: relative;
   z-index: 1;
+  display: grid;
+  grid-template-columns: 1.06fr 0.94fr;
+  align-items: center;
+  gap: var(--space-12);
 }
 
-/* ===== Texto ===== */
-.content {
-  min-width: 0;
-}
+.content { min-width: 0; }
 
 .badge {
   display: inline-flex;
@@ -67,37 +95,32 @@
   margin-bottom: var(--space-6);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-xs);
-  backdrop-filter: blur(10px);
-  color: var(--text-soft);
+  background: var(--ink-surface);
+  border: 1px solid var(--ink-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   font-size: var(--text-sm);
   font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--on-ink-soft);
 }
-
-.badge svg { color: var(--secondary); }
 
 .title {
   margin-bottom: var(--space-6);
-}
-
-.titleBrand {
-  display: block;
-  margin-bottom: var(--space-3);
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  letter-spacing: 0.4em;
-  color: var(--accent);
-}
-
-.titleMain {
-  display: block;
-  font-size: clamp(2.5rem, 5.4vw, 4.25rem);
+  font-size: clamp(2.75rem, 6vw, 5rem);
   font-weight: 800;
-  line-height: 1.04;
-  color: var(--secondary-dark);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--on-ink);
+}
+
+/* O gradiente cai só na segunda linha: destaque tem que ser escasso. */
+.titleAccent {
+  background: linear-gradient(100deg, #7FB2FF 0%, #C7D9FF 40%, #FF8A7A 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 .description {
@@ -105,7 +128,7 @@
   margin-bottom: var(--space-8);
   font-size: var(--text-lg);
   line-height: var(--leading-relaxed);
-  color: var(--text-soft);
+  color: var(--on-ink-muted);
 }
 
 /* ===== Ações ===== */
@@ -116,63 +139,61 @@
 }
 
 .btnPrimary {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  min-height: 56px;
+  min-height: 58px;
   padding: var(--space-4) var(--space-8);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--grad-primary);
   color: #fff;
   font-size: var(--text-lg);
   font-weight: 700;
-  box-shadow: 0 16px 38px -12px rgba(230, 35, 16, 0.5);
+  box-shadow: 0 18px 44px -14px rgba(230, 35, 16, 0.75);
   transition: transform var(--dur-base) var(--ease-out),
               box-shadow var(--dur-base) var(--ease-out);
 }
 
 .btnPrimary:hover {
   transform: translateY(-3px);
-  box-shadow: 0 22px 48px -12px rgba(230, 35, 16, 0.6);
+  box-shadow: 0 26px 56px -14px rgba(230, 35, 16, 0.85);
 }
 
 .btnPrimary svg { transition: transform var(--dur-base) var(--ease-out); }
 .btnPrimary:hover svg { transform: translateX(4px); }
 
-/* Ação secundária claramente subordinada — só uma CTA principal por tela. */
-.btnSecondary {
+.btnGhost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 56px;
+  min-height: 58px;
   padding: var(--space-4) var(--space-8);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
-  background: rgba(255, 255, 255, 0.75);
+  border-radius: var(--radius-md);
+  background: var(--ink-surface);
+  border: 1px solid var(--ink-border-strong);
   backdrop-filter: blur(12px);
-  color: var(--text);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--on-ink);
   font-size: var(--text-lg);
   font-weight: 600;
   transition: background var(--dur-base) var(--ease-out),
               border-color var(--dur-base) var(--ease-out),
-              color var(--dur-base) var(--ease-out),
               transform var(--dur-base) var(--ease-out);
 }
 
-.btnSecondary:hover {
-  background: #fff;
-  border-color: var(--secondary);
-  color: var(--secondary);
+.btnGhost:hover {
+  background: var(--ink-surface-strong);
+  border-color: rgba(255, 255, 255, 0.32);
   transform: translateY(-2px);
 }
 
-/* ===== Selos de confiança ===== */
 .trustRow {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3) var(--space-6);
-  margin-top: var(--space-10);
+  margin-top: var(--space-8);
   list-style: none;
 }
 
@@ -182,10 +203,10 @@
   gap: var(--space-2);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--text-soft);
+  color: var(--on-ink-soft);
 }
 
-.trustItem svg { color: var(--secondary); }
+.trustItem svg { color: #7FB2FF; }
 
 /* ===== Palco da Lumi ===== */
 .visual {
@@ -201,55 +222,59 @@
   align-items: flex-end;
   justify-content: center;
   width: 100%;
-  max-width: 440px;
+  max-width: 460px;
 }
 
 .halo {
   position: absolute;
-  top: 50%;
+  top: 46%;
   left: 50%;
-  width: 108%;
+  width: 128%;
   aspect-ratio: 1;
-  transform: translate(-50%, -55%);
-  background: radial-gradient(circle, rgba(30, 111, 196, 0.2) 0%, rgba(30, 111, 196, 0) 66%);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(140, 190, 255, 0.28) 0%, rgba(140, 190, 255, 0) 62%);
   border-radius: 50%;
   z-index: -1;
 }
 
-.pedestal {
+/* Anel fino: dá escala e um ponto de foco atrás da personagem. */
+.ring {
   position: absolute;
-  bottom: 3%;
+  top: 44%;
   left: 50%;
-  width: 68%;
-  height: 64px;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse at center, rgba(11, 18, 32, 0.16), transparent 70%);
+  width: 88%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 50%;
-  filter: blur(8px);
   z-index: -1;
 }
 
 .mascot {
   width: auto;
-  height: clamp(20rem, 34vw, 32.5rem);
+  height: clamp(21rem, 35vw, 34rem);
   object-fit: contain;
-  filter: drop-shadow(0 24px 44px rgba(11, 18, 32, 0.2));
-  animation: float-y 6s ease-in-out infinite;
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.55));
+  animation: float-y 7s ease-in-out infinite;
+}
+
+.statusCard,
+.secureCard {
+  position: absolute;
+  border-radius: var(--radius-md);
+  background: rgba(12, 22, 44, 0.72);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--ink-border-strong);
+  box-shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.8);
 }
 
 .statusCard {
-  position: absolute;
-  right: -6%;
-  bottom: 14%;
+  right: -7%;
+  bottom: 16%;
   width: 15rem;
   padding: var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--glass-strong);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-lg);
-  animation: float-y 7s ease-in-out infinite;
+  animation: float-y 8s ease-in-out infinite;
 }
 
 .statusHead {
@@ -258,19 +283,90 @@
   gap: var(--space-2);
   margin-bottom: var(--space-2);
   padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--ink-border);
   font-size: var(--text-xs);
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--success);
+  color: #4ADE9B;
 }
 
 .statusQuote {
   font-size: var(--text-base);
   font-weight: 600;
   line-height: var(--leading-snug);
-  color: var(--text);
+  color: var(--on-ink);
+}
+
+.secureCard {
+  top: 12%;
+  left: -6%;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--on-ink-soft);
+  animation: float-y 6.5s ease-in-out infinite reverse;
+}
+
+.secureCard svg { color: #4ADE9B; }
+
+/* ===== Faixa de reforço ===== */
+.proofWrap {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--space-16);
+}
+
+.proof {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  list-style: none;
+}
+
+.proofItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-6);
+  border-radius: var(--bento-radius);
+  /* Tom escuro próprio em vez de branco translúcido: o degradê de emenda com a
+     seção clara passa por trás e desbotava os cartões. */
+  background: rgba(14, 25, 50, 0.66);
+  border: 1px solid var(--ink-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: background var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-out);
+}
+
+.proofItem:hover {
+  background: rgba(20, 34, 66, 0.8);
+  border-color: var(--ink-border-strong);
+}
+
+.proofValue {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--on-ink);
+}
+
+.proofLabel {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--on-ink-soft);
+}
+
+.proofHint {
+  font-size: var(--text-sm);
+  color: var(--on-ink-muted);
 }
 
 /* ===== Mascote em telas estreitas ===== */
@@ -278,12 +374,6 @@
 
 /* ===== Responsivo ===== */
 @media (max-width: 1024px) {
-  /*
-    Sem `justify-items: center` aqui. Isso faria o item do grid dimensionar por
-    max-content: o título não quebrado empurrava a coluna para além da largura
-    da tela e o conteúdo vazava pela direita. Centralizar por dentro (texto +
-    margin auto) mantém a coluna do tamanho da faixa.
-  */
   .container {
     grid-template-columns: minmax(0, 1fr);
     text-align: center;
@@ -291,6 +381,7 @@
   }
 
   .visual { display: none; }
+  .beam { display: none; }
   .description { margin-inline: auto; }
   .actions,
   .trustRow { justify-content: center; }
@@ -304,19 +395,28 @@
 
   .mobileMascotImg {
     width: auto;
-    height: 9.5rem;
+    height: 10.5rem;
     object-fit: contain;
-    filter: drop-shadow(0 12px 24px rgba(11, 18, 32, 0.18));
+    filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.6));
     animation: float-y 6s ease-in-out infinite;
   }
+
+  .proof { grid-template-columns: 1fr; }
+  .proofItem {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--space-3);
+    text-align: left;
+  }
+  .proofValue { font-size: var(--text-2xl); }
+  .proofHint { display: none; }
 }
 
 @media (max-width: 768px) {
-  .hero { padding-block: calc(var(--nav-h) + var(--space-10)) var(--space-16); }
+  .hero { padding-block: calc(var(--nav-h) + var(--space-12)) var(--space-12); }
   .description { font-size: var(--text-base); }
-
-  /* Botão principal em largura total: alvo de toque generoso. */
   .actions { flex-direction: column; width: 100%; max-width: 24rem; }
   .btnPrimary,
-  .btnSecondary { width: 100%; font-size: var(--text-base); }
+  .btnGhost { width: 100%; font-size: var(--text-base); }
+  .proofWrap { margin-top: var(--space-10); }
 }

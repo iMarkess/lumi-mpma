@@ -1,21 +1,23 @@
+/* O rodapé continua a faixa escura do app: as duas seções finais formam um
+   bloco só e fecham a página com o mesmo tom do hero. */
 .footer {
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  padding-block: var(--space-20) var(--space-16);
-  background: linear-gradient(180deg, #FFFFFF 0%, #EEF2F9 100%);
-  border-top: 1px solid var(--border);
-  color: var(--text);
+  padding-block: var(--space-16) var(--space-12);
+  background: var(--ink-950);
+  color: var(--on-ink);
+  border-top: 1px solid var(--ink-border);
 }
 
 .bgGlow {
   position: absolute;
-  top: -10rem;
+  top: -14rem;
   left: 50%;
-  width: min(47.5rem, 120vw);
-  height: 22.5rem;
+  width: min(56rem, 130vw);
+  height: 26rem;
   transform: translateX(-50%);
-  background: radial-gradient(ellipse at center, rgba(30, 111, 196, 0.1), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(30, 111, 196, 0.16), transparent 70%);
   z-index: -1;
   pointer-events: none;
 }
@@ -30,28 +32,30 @@
   margin-bottom: var(--space-16);
   padding: var(--space-10);
   border-radius: var(--radius-xl);
-  background: linear-gradient(135deg, rgba(0, 69, 142, 0.07), rgba(230, 35, 16, 0.04));
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
+  background: var(--ink-surface);
+  border: 1px solid var(--ink-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .ctaTitle {
-  margin-bottom: var(--space-1);
-  font-size: clamp(1.375rem, 2.6vw, 1.875rem);
+  margin-bottom: var(--space-2);
+  font-size: clamp(1.5rem, 2.8vw, 2.125rem);
   font-weight: 800;
-  color: var(--text);
+  letter-spacing: -0.03em;
+  color: var(--on-ink);
 }
 
 .ctaText {
   font-size: var(--text-base);
-  color: var(--text-muted);
+  color: var(--on-ink-muted);
 }
 
 .ctaButton {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 52px;
+  min-height: 54px;
   padding: var(--space-4) var(--space-8);
   border-radius: var(--radius-full);
   background: var(--grad-primary);
@@ -59,14 +63,14 @@
   font-size: var(--text-base);
   font-weight: 700;
   white-space: nowrap;
-  box-shadow: 0 12px 30px -10px rgba(230, 35, 16, 0.5);
+  box-shadow: 0 16px 36px -12px rgba(230, 35, 16, 0.8);
   transition: transform var(--dur-base) var(--ease-out),
               box-shadow var(--dur-base) var(--ease-out);
 }
 
 .ctaButton:hover {
   transform: translateY(-3px);
-  box-shadow: 0 18px 40px -10px rgba(230, 35, 16, 0.6);
+  box-shadow: 0 22px 46px -12px rgba(230, 35, 16, 0.9);
 }
 
 .ctaButton svg { transition: transform var(--dur-base) var(--ease-out); }
@@ -81,7 +85,7 @@
   margin-bottom: var(--space-12);
 }
 
-.brand { max-width: 26rem; }
+.brand { max-width: 28rem; }
 
 .logoRow {
   display: flex;
@@ -100,38 +104,39 @@
   border-radius: 13px;
   background: var(--grad-brand);
   color: #fff;
-  box-shadow: 0 6px 16px -6px rgba(0, 69, 142, 0.6);
+  box-shadow: 0 6px 18px -6px rgba(30, 111, 196, 0.9);
 }
 
 .sep {
   width: 1px;
   height: 28px;
-  background: var(--border-strong);
+  background: var(--ink-border-strong);
 }
 
 .brandName {
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 800;
-  color: var(--text);
+  letter-spacing: 0.01em;
+  color: var(--on-ink);
 }
 
 .brandTagline {
   margin-bottom: var(--space-4);
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
-  color: var(--text-muted);
+  color: var(--on-ink-muted);
 }
 
 /* Aviso legal: precisa ser legível de verdade, não letra miúda escondida. */
 .disclaimer {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-4);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface-sunken);
+  border: 1px solid var(--ink-border);
+  background: var(--ink-surface);
   font-size: var(--text-xs);
   line-height: var(--leading-normal);
-  color: var(--text-soft);
+  color: var(--on-ink-soft);
 }
 
 .links {
@@ -153,7 +158,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--on-ink-muted);
 }
 
 /* Alvo de toque de 44px sem inflar o espaçamento visual. */
@@ -164,13 +169,13 @@
   min-height: 44px;
   width: fit-content;
   font-size: var(--text-sm);
-  color: var(--text-soft);
+  color: var(--on-ink-soft);
   transition: color var(--dur-fast) var(--ease-out),
               transform var(--dur-fast) var(--ease-out);
 }
 
 .link:hover {
-  color: var(--secondary);
+  color: #fff;
   transform: translateX(3px);
 }
 
@@ -182,19 +187,17 @@
   flex-wrap: wrap;
   gap: var(--space-4);
   padding-top: var(--space-8);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--ink-border);
   font-size: var(--text-sm);
-  color: var(--text-muted);
+  color: var(--on-ink-muted);
 }
 
 .emergencyNote a {
   font-weight: 700;
-  color: var(--danger);
+  color: #FF9B8C;
 }
 
-.emergencyNote a:hover {
-  text-decoration: underline;
-}
+.emergencyNote a:hover { text-decoration: underline; }
 
 /*
   O rodapé ficava `display: none` abaixo de 768px, o que escondia a política
@@ -202,7 +205,7 @@
   Agora ele só reflui.
 */
 @media (max-width: 768px) {
-  .footer { padding-block: var(--space-16) var(--space-10); }
+  .footer { padding-block: var(--space-12) var(--space-10); }
 
   .cta {
     flex-direction: column;

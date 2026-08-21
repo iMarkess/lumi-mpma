@@ -1,3 +1,8 @@
+/*
+  A barra vive sobre duas realidades: o hero escuro (topo) e o conteúdo claro
+  (depois da rolagem). O estado padrão é claro-sobre-escuro; `.scrolled` inverte
+  tudo de uma vez. Sem isso o texto some numa das duas.
+*/
 .nav {
   position: fixed;
   top: 0;
@@ -7,17 +12,12 @@
   padding-top: env(safe-area-inset-top);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  border-bottom: 1px solid transparent;
   transition: background var(--dur-slow) var(--ease-out),
               box-shadow var(--dur-slow) var(--ease-out),
               border-color var(--dur-slow) var(--ease-out);
-  border-bottom: 1px solid transparent;
 }
 
-/*
-  Superfície real assim que a página rola. Antes a barra ficava transparente
-  o tempo todo (o scroll estava no <body>, então scrollY nunca passava do
-  limite) e o conteúdo passava por baixo dela, ilegível.
-*/
 .scrolled {
   background: rgba(255, 255, 255, 0.86);
   backdrop-filter: blur(20px) saturate(170%);
@@ -53,7 +53,7 @@
   border-radius: 13px;
   background: var(--grad-brand);
   color: #fff;
-  box-shadow: 0 6px 16px -6px rgba(0, 69, 142, 0.6);
+  box-shadow: 0 6px 18px -6px rgba(30, 111, 196, 0.8);
   transition: transform var(--dur-slow) var(--ease-spring);
 }
 
@@ -72,16 +72,20 @@
   font-size: var(--text-lg);
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: var(--secondary);
+  color: #fff;
+  transition: color var(--dur-slow) var(--ease-out);
 }
 
 .logoOrg {
   font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--text-muted);
   white-space: nowrap;
+  color: var(--on-ink-muted);
+  transition: color var(--dur-slow) var(--ease-out);
 }
+
+.scrolled .logoName { color: var(--secondary); }
+.scrolled .logoOrg { color: var(--text-muted); }
 
 /* ===== Links ===== */
 .links {
@@ -97,7 +101,7 @@
   min-height: 44px;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  color: var(--text-soft);
+  color: var(--on-ink-soft);
   font-weight: 600;
   font-size: var(--text-sm);
   transition: color var(--dur-fast) var(--ease-out),
@@ -105,14 +109,20 @@
 }
 
 .link:hover {
-  color: var(--secondary);
-  background: rgba(0, 69, 142, 0.08);
+  color: #fff;
+  background: var(--ink-surface-strong);
 }
 
-/* Localização atual: cor + peso, não só cor. */
 .link[aria-current='page'] {
-  color: var(--secondary);
+  color: #fff;
   font-weight: 700;
+  background: var(--ink-surface-strong);
+}
+
+.scrolled .link { color: var(--text-soft); }
+.scrolled .link:hover,
+.scrolled .link[aria-current='page'] {
+  color: var(--secondary);
   background: rgba(0, 69, 142, 0.1);
 }
 
@@ -124,8 +134,8 @@
   margin-left: var(--space-2);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-strong);
-  color: var(--text-soft);
+  border: 1px solid var(--ink-border-strong);
+  color: var(--on-ink-soft);
   font-weight: 600;
   font-size: var(--text-sm);
   transition: color var(--dur-base) var(--ease-out),
@@ -134,6 +144,17 @@
 }
 
 .adminLink:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--ink-surface);
+}
+
+.scrolled .adminLink {
+  color: var(--text-soft);
+  border-color: var(--border-strong);
+}
+
+.scrolled .adminLink:hover {
   color: var(--secondary);
   border-color: var(--secondary);
   background: rgba(0, 69, 142, 0.06);
@@ -152,14 +173,14 @@
   font-weight: 700;
   font-size: var(--text-sm);
   white-space: nowrap;
-  box-shadow: 0 8px 22px -6px rgba(230, 35, 16, 0.5);
+  box-shadow: 0 10px 26px -8px rgba(230, 35, 16, 0.7);
   transition: transform var(--dur-base) var(--ease-out),
               box-shadow var(--dur-base) var(--ease-out);
 }
 
 .cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px -6px rgba(230, 35, 16, 0.65);
+  box-shadow: 0 16px 34px -8px rgba(230, 35, 16, 0.8);
 }
 
 .cta svg { transition: transform var(--dur-base) var(--ease-out); }
@@ -183,4 +204,17 @@
 @media (max-width: 380px) {
   .logoName { font-size: var(--text-base); }
   .cta { padding: var(--space-2) var(--space-4); }
+}
+
+/* Alvo do IntersectionObserver, no topo absoluto do documento. A altura é a
+   distância de rolagem que dispara a troca: enquanto qualquer parte dela
+   estiver visível, a barra fica no modo claro-sobre-escuro. Sem altura
+   suficiente a troca vira um piscar de 1px. */
+.sentinel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 24px;
+  pointer-events: none;
 }

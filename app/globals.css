@@ -66,6 +66,26 @@
   --grad-accent: linear-gradient(135deg, #FFCE45 0%, #F5B301 100%);
   --grad-ink: linear-gradient(160deg, #0B1F3A 0%, #06122A 60%, #040B1C 100%);
 
+  /* ===== ZONA ESCURA (hero e faixa do app) =====
+     LUMI é luz. As seções escuras existem para que a luz da marca tenha
+     de onde surgir — não são enfeite. Preto puro fica fora: em OLED
+     borra o movimento e achata a profundidade. */
+  --ink-950: #04091A;
+  --ink-900: #0A1226;
+  --ink-800: #121D38;
+  --ink-surface: rgba(255, 255, 255, 0.05);
+  --ink-surface-strong: rgba(255, 255, 255, 0.08);
+  --ink-border: rgba(255, 255, 255, 0.10);
+  --ink-border-strong: rgba(255, 255, 255, 0.18);
+  --on-ink: #EDF2FB;          /* 16:1 sobre --ink-900 */
+  --on-ink-soft: #C3CFE4;     /* 9.4:1 */
+  --on-ink-muted: #93A3BF;    /* 5.3:1 — passa AA em corpo */
+  --grad-ink-deep: radial-gradient(120% 90% at 50% -10%, #16264A 0%, #0A1226 45%, #04091A 100%);
+
+  /* ===== BENTO ===== */
+  --bento-gap: 20px;
+  --bento-radius: 24px;
+
   /* ===== ESPAÇAMENTO (múltiplos de 4) ===== */
   --space-1: 4px;
   --space-2: 8px;
