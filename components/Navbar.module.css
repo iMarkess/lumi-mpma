@@ -1,7 +1,7 @@
 /*
-  A barra vive sobre duas realidades: o hero escuro (topo) e o conteúdo claro
-  (depois da rolagem). O estado padrão é claro-sobre-escuro; `.scrolled` inverte
-  tudo de uma vez. Sem isso o texto some numa das duas.
+  O hero é branco, então a barra é escura-sobre-clara desde o topo. `.scrolled`
+  só acrescenta superfície (fundo, blur e sombra) para separar do conteúdo que
+  passa por baixo — as cores do texto não mudam.
 */
 .nav {
   position: fixed;
@@ -72,20 +72,15 @@
   font-size: var(--text-lg);
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: #fff;
-  transition: color var(--dur-slow) var(--ease-out);
+  color: var(--secondary);
 }
 
 .logoOrg {
   font-size: 0.7rem;
   font-weight: 600;
   white-space: nowrap;
-  color: var(--on-ink-muted);
-  transition: color var(--dur-slow) var(--ease-out);
+  color: var(--text-muted);
 }
-
-.scrolled .logoName { color: var(--secondary); }
-.scrolled .logoOrg { color: var(--text-muted); }
 
 /* ===== Links ===== */
 .links {
@@ -101,7 +96,7 @@
   min-height: 44px;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  color: var(--on-ink-soft);
+  color: var(--text-soft);
   font-weight: 600;
   font-size: var(--text-sm);
   transition: color var(--dur-fast) var(--ease-out),
@@ -109,20 +104,13 @@
 }
 
 .link:hover {
-  color: #fff;
-  background: var(--ink-surface-strong);
+  color: var(--secondary);
+  background: rgba(0, 69, 142, 0.08);
 }
 
 .link[aria-current='page'] {
-  color: #fff;
-  font-weight: 700;
-  background: var(--ink-surface-strong);
-}
-
-.scrolled .link { color: var(--text-soft); }
-.scrolled .link:hover,
-.scrolled .link[aria-current='page'] {
   color: var(--secondary);
+  font-weight: 700;
   background: rgba(0, 69, 142, 0.1);
 }
 
@@ -134,8 +122,8 @@
   margin-left: var(--space-2);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  border: 1px solid var(--ink-border-strong);
-  color: var(--on-ink-soft);
+  border: 1px solid var(--border-strong);
+  color: var(--text-soft);
   font-weight: 600;
   font-size: var(--text-sm);
   transition: color var(--dur-base) var(--ease-out),
@@ -144,17 +132,6 @@
 }
 
 .adminLink:hover {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.4);
-  background: var(--ink-surface);
-}
-
-.scrolled .adminLink {
-  color: var(--text-soft);
-  border-color: var(--border-strong);
-}
-
-.scrolled .adminLink:hover {
   color: var(--secondary);
   border-color: var(--secondary);
   background: rgba(0, 69, 142, 0.06);
