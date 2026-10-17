@@ -1,8 +1,8 @@
 # LUMI — App Flutter (Android / Play Store)
 
 App nativo Material Design 3 do LUMI, canal independente de denúncias. Redesenho
-completo mobile-first — **não** é o site num WebView. Roda 100% com dados mock;
-a API real do LUMI pluga trocando uma classe de repositório.
+completo mobile-first — **não** é o site num WebView. Ligado na API real do LUMI
+(backend no VPS); repositórios mock só entram se `apiBaseUrl` ficar vazio.
 
 ## Stack
 
@@ -152,30 +152,17 @@ Correção, em três camadas:
 O `.aab` antigo foi renomeado para `app-release-1.0.3-QUEBRADO-NAO-SUBIR.aab`
 na raiz do repositório. Não suba esse arquivo.
 
-## Login com Google NATIVO (SHA-1)
+## Dados e sessão
 
-Ordem correta (o SHA-1 só existe após ter a chave de assinatura):
+- **API:** `lib/core/config.dart` (`https://lumimpma.site`). Cliente HTTP em
+  `lib/core/network/api_client.dart`.
+- **Conta de cidadão:** `/api/citizen/{register,login,me,password,delete}`.
+  Sessão (JWT) salva em `shared_preferences` — quem já entrou abre na Home.
+- **Acesso anônimo:** "Continuar sem conta" — nada sobre a pessoa é enviado.
+- **Minhas denúncias / notificações:** a API não lista denúncias (sigilo); os
+  protocolos enviados ou consultados ficam salvos no aparelho
+  (`lib/core/storage/local_store.dart`) e são consultados um a um.
+- **Bloqueio por biometria:** Perfil → Segurança (`app_lock.dart`).
 
-1. Gere o keystore (Codemagic no passo acima, **ou** Play App Signing após o 1º upload).
-2. Pegue o **SHA-1**:
-   - Codemagic: tela de Code signing.
-   - Play Console: **Configuração → Integridade do app → Assinatura de apps**
-     (mostra SHA-1 da chave de upload e da chave do app).
-3. Google Cloud → **Credenciais → ID do cliente OAuth → Android**:
-   - Nome do pacote: `br.com.lumi.denuncia`
-   - SHA-1: cole o do passo 2
-4. (Para receber `idToken` e verificar no backend) crie também um **OAuth Web**
-   e passe o Web Client ID como `serverClientId` em
-   `lib/features/auth/data/google_auth.dart`.
-5. Baixe o `google-services.json` (Firebase, mesmo package) e coloque em
-   `android/app/` — ou configure via Google Cloud direto.
-
-Depois disso: clicar em "Continuar com o Google" abre o seletor de contas do
-aparelho e cria a conta automaticamente (o backend `POST /api/citizen/google`
-verifica o token). Código já pronto em `google_auth.dart` + `auth_controller.dart`.
-
-## Acessos de teste (mock)
-
-- **Promotor:** CPF `046.675.443-41` · senha `123`
-- **Secretaria:** CPF `000.000.000-00` · senha `123`
-- **Cidadão:** botão "Continuar como cidadão" (sem login)
+Login com Google foi removido (não estava configurado; a rota do backend
+continua lá caso volte a ser usada).

@@ -1,77 +1,88 @@
-# Publicar a LUMI (app NATIVO) na Google Play Store
+# Publicar a LUMI (app nativo) na Google Play
 
-App Flutter nativo.
+Package: **`br.com.lumi.denuncia`** (não muda nunca). Versão atual: **1.0.5 (6)**.
 
-> ⚠️ **O `.aab` da versão 1.0.3 está quebrado — instala e não abre.**
-> Foi renomeado para `app-release-1.0.3-QUEBRADO-NAO-SUBIR.aab`. **Não suba.**
-> Causa e correção em `mobile/README.md`. Gere um pacote novo (1.0.4+5) rodando
-> o workflow `android-lumi` no Codemagic; o CI agora reprova sozinho qualquer
-> AAB sem `MainActivity` no dex.
+## 1. Gerar o pacote
 
-## Você já tem (na pasta do projeto)
-- **`.aab` novo** → gerado pelo Codemagic (workflow `android-lumi`)
-- **Ícone 512×512:** `public/icons/icon-512.png`
-- **Feature graphic 1024×500:** `public/store/feature-graphic.png`
-- **Keystore:** `lumi-upload.jks` (senha `LumiMpma#2026`, alias `upload`) — **guarde pra sempre**
+```powershell
+powershell -ExecutionPolicy Bypass -File mobile\build-local.ps1 -StorePassword 'SENHA_DA_KEYSTORE'
+```
 
-## Falta só (você prepara)
-- **Screenshots** (mín. 2 de celular): abra https://lumimpma.site/web/ no Chrome →
-  F12 → modo celular (Ctrl+Shift+M) → Pixel 7 → tire prints da Home, do formulário e do Acompanhar.
-- **Política de privacidade** numa URL pública (obrigatória — app de denúncia). Modelo abaixo.
+Sai `LUMI-1.0.5-6-SUBIR-ESTE.aab` na raiz do projeto, já verificado por
+`mobile/ci/verify_aab.py`. **Não suba** `app-release-1.0.3-QUEBRADO-NAO-SUBIR.aab`.
 
----
+A cada novo envio, aumente o número depois do `+` em `mobile/pubspec.yaml`
+e o `appVersion` em `mobile/lib/core/config.dart`.
 
-## Passo a passo (Play Console)
+## 2. Backend precisa estar atualizado
 
-### 1. Enviar o app (teste interno) — você já está nessa tela
-- **Teste interno → Criar versão** → arraste **`app-release.aab`** em "Solte os pacotes".
-- **Nome da versão:** `1.0.0 (1)`.
-- Salvar → **Avançar** → **Iniciar lançamento para teste interno**.
-- Em **Testadores**: crie uma lista com seu e-mail (+ quem for testar). Eles recebem um link pra instalar pela Play.
+O app usa rotas novas (`/api/citizen/password`, `/api/citizen/delete`). Antes de
+mandar para revisão, publique o backend no VPS:
 
-### 2. Preencher "Painel" (obrigatório antes de produção)
-No menu esquerdo, complete cada item com ✓:
+```bash
+ssh root@31.97.151.126
+cd ~/lumi-mpma && git pull --ff-only
+cd backend && docker compose up -d --build api
+```
 
-**Configuração → Conteúdo do app:**
-- **Política de privacidade:** cole a URL (Passo 4).
-- **Acesso ao app:** "Todas as funções sem restrição" (ou explique o login de servidor).
-- **Anúncios:** Não contém anúncios.
-- **Segurança dos dados (Data safety):** declare que coleta denúncias (texto, opcional localização/contato); dados **criptografados em trânsito**; pode ser anônimo; não vende dados. Seja honesto — Play reprova denúncia mal declarada.
-- **Classificação de conteúdo:** responda o questionário (vai dar "Livre/Adulto conforme").
-- **Público-alvo:** 18+ (trata de denúncias).
-- **App governamental:** se perguntar, marque que representa órgão público (MPMA) — pode pedir comprovação.
+## 3. Conta de teste para o revisor
 
-### 3. Ficha da loja (Store listing)
-- **Nome:** LUMI
-- **Descrição curta (80):** "Canal oficial de denúncias do Ministério Público do Maranhão."
-- **Descrição completa:** (sugestão)
-  > A LUMI é o aplicativo oficial do Ministério Público do Estado do Maranhão para
-  > registrar denúncias com segurança e sigilo. Denuncie situações envolvendo crianças
-  > e adolescentes, idosos e pessoas vulneráveis, e o meio ambiente. Sua denúncia pode
-  > ser anônima e você acompanha o andamento pelo número de protocolo.
-- **Ícone:** `public/icons/icon-512.png`
-- **Feature graphic:** `public/store/feature-graphic.png`
-- **Screenshots:** os que você tirou.
+A Play pede acesso a todas as funções. Crie uma conta pelo próprio app
+(Criar conta) — ex.: CPF válido de teste + senha — e informe em
+**Conteúdo do app → Acesso ao app**:
 
-### 4. Política de privacidade (obrigatória)
-Publique um texto numa URL (ex.: no seu site ou uma página simples). Deve dizer:
-- Quais dados coleta (conteúdo da denúncia, e opcionalmente localização/contato).
-- Que a denúncia pode ser **anônima**.
-- Base legal (LGPD 13.709/2018), finalidade, retenção, com quem compartilha (MPMA).
-- Canal de contato (Ouvidoria do MPMA).
-> Valide com o jurídico do MPMA. Posso gerar esse texto + hospedar no VPS se quiser.
+> A maior parte do app funciona sem login ("Continuar sem conta").
+> Para testar a área de conta: CPF `xxx.xxx.xxx-xx`, senha `xxxxxx`.
 
-### 5. Enviar para revisão
-- Com tudo ✓, vá em **Produção → Criar versão** → suba o mesmo `.aab` → **Enviar para revisão**.
-- Revisão de app de governo/denúncia: de alguns dias a ~2 semanas.
+## 4. Conteúdo do app (Play Console → Política → Conteúdo do app)
 
----
+| Item | Resposta |
+|---|---|
+| Política de privacidade | `https://lumimpma.site/privacidade` |
+| Exclusão de conta (URL) | `https://lumimpma.site/excluir-conta` — e no app: Perfil → Excluir conta |
+| Anúncios | Não contém anúncios |
+| Público-alvo | 18+ |
+| App governamental | **Não** (app independente) |
+| Recursos financeiros / saúde | Não |
 
-## Atualizar o app depois
-Mudou o código → me chama → eu re-buildo no VPS (mesma keystore) → você sobe o novo `.aab`.
-Sempre incremente a versão em `mobile/pubspec.yaml` (`version: 1.0.1+2`, etc.).
+### Segurança dos dados (Data safety)
 
-## HTTPS (importante p/ produção)
-Hoje o app fala com a API em HTTP no IP (só teste). Para produção séria, o certo é
-**domínio + HTTPS** na API (posso configurar no seu VPS com um subdomínio, sem mexer
-nos sites atuais). Recomendo antes de divulgar em massa.
+- **Coleta dados?** Sim. **Compartilha com terceiros?** Não.
+- **Criptografados em trânsito?** Sim (HTTPS). **Usuário pode pedir exclusão?** Sim.
+- Tipos declarados:
+  - *Informações pessoais → Nome, E-mail, Outros IDs (CPF)* — opcional, só quem cria conta. Finalidade: gerenciamento de conta.
+  - *Informações pessoais → E-mail* — opcional, contato numa denúncia não anônima. Finalidade: funcionalidade do app.
+  - *Mensagens no app / Outro conteúdo gerado pelo usuário* — texto da denúncia. Obrigatório para usar a função. Finalidade: funcionalidade do app.
+- Não coleta: localização, contatos, fotos, identificadores de publicidade.
+- Biometria: processada só no aparelho pelo Android, nada é enviado.
+
+## 5. Ficha da loja
+
+- **Nome:** LUMI — Denúncias
+- **Descrição curta:** Registre denúncias com sigilo e acompanhe pelo protocolo.
+- **Descrição completa:**
+  > A LUMI é um aplicativo independente para registrar denúncias com segurança
+  > e sigilo: situações envolvendo crianças e adolescentes, idosos e pessoas com
+  > deficiência, e o meio ambiente. A denúncia pode ser anônima, sem cadastro.
+  > Ao enviar, você recebe um número de protocolo e acompanha o andamento pelo
+  > app, com notificações a cada atualização.
+  >
+  > A LUMI não é um canal oficial de órgão público. Em emergência, ligue 190.
+- **Ícone 512×512:** `playstore/icon-512.png`
+- **Feature graphic 1024×500:** `playstore/feature-graphic.png`
+- **Screenshots:** `playstore/screenshot-1..4.png` — **refaça** com a versão 1.0.5
+  (a tela de login mudou).
+
+> Não use "oficial", "MPMA", "Ministério Público" nem brasão em nome, ícone,
+> descrição ou screenshots: a Play reprova app que aparenta ser de órgão público
+> sem comprovação.
+
+## 6. Enviar
+
+Teste interno → Criar versão → subir o `.aab` → notas da versão:
+
+> Contas de cidadão, histórico de denúncias e notificações reais, exclusão de
+> conta no app, bloqueio por biometria e melhorias gerais.
+
+Depois de testar no celular pelo link de teste interno: **Produção → Criar
+versão** com o mesmo `.aab` → **Enviar para revisão**.
