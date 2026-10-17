@@ -1,10 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_client.dart';
+import '../../../core/storage/local_store.dart';
 import '../data/auth_repository.dart';
 import '../domain/user.dart';
 
+final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
+
 final authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => MockAuthRepository(),
+  (ref) => ApiAuthRepository(ref.watch(apiClientProvider)),
 );
 
 class AuthState {
@@ -14,89 +18,108 @@ class AuthState {
   final String? error;
 
   bool get isAuthenticated => user != null;
-
-  AuthState copyWith({
-    AppUser? user,
-    bool? loading,
-    String? error,
-    bool clearError = false,
-  }) =>
-      AuthState(
-        user: user ?? this.user,
-        loading: loading ?? this.loading,
-        error: clearError ? null : (error ?? this.error),
-      );
 }
 
-/// Controla a sessão do usuário (login por CPF/senha, biometria e convidado).
+/// Sessão do usuário: conta de cidadão (API) ou acesso anônimo.
+/// Persistida no aparelho — quem já entrou abre direto na Home.
 class AuthController extends Notifier<AuthState> {
   @override
-  AuthState build() => const AuthState();
+  AuthState build() {
+    final saved = ref.read(localStoreProvider).readSession();
+    final user = saved == null ? null : AppUser.fromJson(saved);
+    if (user != null && !user.isGuest) Future.microtask(() => _revalidate(user));
+    return AuthState(user: user);
+  }
 
   AuthRepository get _repo => ref.read(authRepositoryProvider);
+  LocalStore get _store => ref.read(localStoreProvider);
 
-  Future<bool> login(String cpf, String password) async {
-    state = state.copyWith(loading: true, clearError: true);
+  Future<void> _revalidate(AppUser user) async {
     try {
-      final user = await _repo.login(cpf, password);
-      state = AuthState(user: user);
-      return true;
-    } on AuthException catch (e) {
-      state = state.copyWith(loading: false, error: e.message);
-      return false;
-    } catch (_) {
-      state = state.copyWith(
-        loading: false,
-        error: 'Não foi possível entrar. Tente novamente.',
-      );
-      return false;
-    }
+      final fresh = await _repo.refresh(user);
+      if (state.user?.id != user.id) return;
+      await _setUser(fresh);
+    } on AuthException catch (_) {
+      // Token expirado/conta excluída: volta ao login. Sem rede: mantém a sessão.
+      if (state.user?.id == user.id) await _clear();
+    } catch (_) {}
   }
 
-  Future<bool> loginWithBiometrics() async {
-    state = state.copyWith(loading: true, clearError: true);
-    try {
-      final user = await _repo.loginWithBiometrics();
-      state = AuthState(user: user);
-      return true;
-    } catch (_) {
-      state = state.copyWith(
-        loading: false,
-        error: 'Falha na autenticação biométrica.',
-      );
-      return false;
-    }
+  Future<void> _setUser(AppUser user) async {
+    await _store.writeSession(user.toJson());
+    state = AuthState(user: user);
   }
 
-  Future<bool> loginWithGoogle() async {
-    state = state.copyWith(loading: true, clearError: true);
-    try {
-      final user = await _repo.loginWithGoogle();
-      state = AuthState(user: user);
-      return true;
-    } on AuthException catch (e) {
-      state = state.copyWith(loading: false, error: e.message);
-      return false;
-    } catch (_) {
-      state = state.copyWith(
-        loading: false,
-        error: 'Não foi possível entrar com o Google.',
-      );
-      return false;
-    }
-  }
-
-  /// Acesso do cidadão sem login (denúncia anônima).
-  void continueAsGuest() {
-    state = const AuthState(
-      user: AppUser(id: 'guest', name: 'Cidadão', role: UserRole.cidadao),
-    );
-  }
-
-  Future<void> logout() async {
-    await _repo.logout();
+  Future<void> _clear() async {
+    await _store.clearSession();
     state = const AuthState();
   }
+
+  Future<bool> _run(Future<AppUser> Function() action) async {
+    state = AuthState(user: state.user, loading: true);
+    try {
+      await _setUser(await action());
+      return true;
+    } on AuthException catch (e) {
+      state = AuthState(user: state.user, error: e.message);
+    } catch (_) {
+      state = AuthState(
+        user: state.user,
+        error: 'Não foi possível concluir. Tente novamente.',
+      );
+    }
+    return false;
+  }
+
+  Future<bool> login(String identifier, String password) =>
+      _run(() => _repo.login(identifier, password));
+
+  Future<bool> register({
+    required String name,
+    required String cpf,
+    String? email,
+    required String password,
+  }) =>
+      _run(() => _repo.register(
+            name: name,
+            cpf: cpf,
+            email: email,
+            password: password,
+          ));
+
+  /// Acesso sem conta (denúncia anônima).
+  Future<void> continueAsGuest() => _setUser(AppUser.guest);
+
+  /// Troca a senha. Devolve a mensagem de erro, ou null se deu certo.
+  Future<String?> changePassword(String current, String next) async {
+    final user = state.user;
+    if (user == null || user.isGuest) return 'Entre na sua conta primeiro.';
+    try {
+      await _repo.changePassword(user, current, next);
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (_) {
+      return 'Não foi possível alterar a senha.';
+    }
+  }
+
+  /// Exclui a conta no servidor e encerra a sessão. Devolve erro ou null.
+  Future<String?> deleteAccount(String password) async {
+    final user = state.user;
+    if (user == null || user.isGuest) return 'Nenhuma conta para excluir.';
+    try {
+      await _repo.deleteAccount(user, password);
+      await _clear();
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (_) {
+      return 'Não foi possível excluir a conta.';
+    }
+  }
+
+  Future<void> logout() => _clear();
 }
 
 final authControllerProvider =

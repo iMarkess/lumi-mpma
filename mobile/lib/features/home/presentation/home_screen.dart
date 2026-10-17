@@ -19,7 +19,6 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
     final user = ref.watch(authControllerProvider).user;
     final recent = ref.watch(recentComplaintsProvider);
 
@@ -130,13 +129,21 @@ class HomeScreen extends ConsumerWidget {
 
             // Atividades recentes
             SectionHeader(
-              title: 'Denúncias recentes',
+              title: 'Minhas denúncias',
               actionLabel: 'Ver tudo',
               onAction: () => context.go('/acompanhar'),
             ),
             recent.when(
               data: (list) => Column(
                 children: [
+                  if (list.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Você ainda não enviou denúncias por este aparelho.',
+                        style: t.bodySmall,
+                      ),
+                    ),
                   for (final c in list.take(3))
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -145,7 +152,7 @@ class HomeScreen extends ConsumerWidget {
                 ],
               ),
               loading: () => const ShimmerList(count: 3),
-              error: (_, __) => Text('Erro ao carregar.', style: t.bodyMedium),
+              error: (e, __) => Text('$e Puxe para atualizar.', style: t.bodySmall),
             ),
           ],
         ),
@@ -327,7 +334,7 @@ class _ComplaintTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     return AppCard(
-      onTap: () {},
+      onTap: () => context.go('/acompanhar?p=${complaint.id}'),
       child: Row(
         children: [
           Container(

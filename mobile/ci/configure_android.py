@@ -173,7 +173,13 @@ PERMISSIONS = [
     "android.permission.INTERNET",
     "android.permission.ACCESS_NETWORK_STATE",
     "android.permission.USE_BIOMETRIC",
-    "android.permission.POST_NOTIFICATIONS",
+]
+
+
+URL_INTENTS = [
+    ("android.intent.action.VIEW", "https"),
+    ("android.intent.action.VIEW", "tel"),
+    ("android.intent.action.VIEW", "mailto"),
 ]
 
 
@@ -202,6 +208,24 @@ def patch_manifest() -> None:
     if missing:
         block = "\n".join(f'    <uses-permission android:name="{p}"/>' for p in missing)
         text = text.replace("<application", block + "\n\n    <application", 1)
+
+    # Android 11+: sem <queries> o url_launcher nao enxerga navegador, discador
+    # e app de e-mail (politica de privacidade, 190, suporte).
+    if 'android:scheme="tel"' not in text:
+        intents = "".join(
+            f"""
+        <intent>
+            <action android:name="{action}"/>
+            <data android:scheme="{scheme}"/>
+        </intent>"""
+            for action, scheme in URL_INTENTS
+        )
+        if "<queries>" in text:
+            text = text.replace("<queries>", "<queries>" + intents, 1)
+        else:
+            text = text.replace(
+                "</manifest>", f"    <queries>{intents}\n    </queries>\n</manifest>", 1
+            )
 
     manifest.write_text(text, encoding="utf-8")
     print(f"AndroidManifest.xml configurado (label={APP_LABEL}, +{len(missing)} permissoes).")
@@ -252,10 +276,6 @@ PROGUARD = """# Keeps da LUMI. O release sai com minifyEnabled=false, mas se alg
 -keep class io.flutter.plugins.** { *; }
 -keep class io.flutter.embedding.** { *; }
 -dontwarn io.flutter.embedding.**
-
-# Google Sign-In / Play Services.
--keep class com.google.android.gms.** { *; }
--dontwarn com.google.android.gms.**
 
 # local_auth (AndroidX biometric).
 -keep class androidx.biometric.** { *; }

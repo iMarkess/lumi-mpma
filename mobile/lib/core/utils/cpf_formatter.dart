@@ -23,3 +23,19 @@ class CpfInputFormatter extends TextInputFormatter {
     );
   }
 }
+
+/// Confere os dígitos verificadores do CPF.
+bool isValidCpf(String input) {
+  final d = input.replaceAll(RegExp(r'\D'), '');
+  if (d.length != 11 || RegExp(r'^(\d)\1{10}$').hasMatch(d)) return false;
+  final n = d.split('').map(int.parse).toList();
+  for (var check = 9; check < 11; check++) {
+    var sum = 0;
+    for (var i = 0; i < check; i++) {
+      sum += n[i] * (check + 1 - i);
+    }
+    final digit = (sum * 10) % 11 % 10;
+    if (digit != n[check]) return false;
+  }
+  return true;
+}

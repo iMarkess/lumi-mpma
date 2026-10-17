@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config.dart';
+import '../../../core/storage/local_store.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/launcher.dart';
+import '../../auth/presentation/auth_controller.dart';
+import 'app_lock.dart';
 
 /// ===== Base: tela com AppBar padrão =====
 class _SettingsScaffold extends StatelessWidget {
@@ -23,63 +28,6 @@ class _SettingsScaffold extends StatelessWidget {
   }
 }
 
-/// Switch persistido em SharedPreferences.
-class PrefSwitch extends StatefulWidget {
-  const PrefSwitch({
-    super.key,
-    required this.prefKey,
-    required this.title,
-    required this.subtitle,
-    this.defaultValue = true,
-    this.icon,
-  });
-  final String prefKey;
-  final String title;
-  final String subtitle;
-  final bool defaultValue;
-  final IconData? icon;
-
-  @override
-  State<PrefSwitch> createState() => _PrefSwitchState();
-}
-
-class _PrefSwitchState extends State<PrefSwitch> {
-  bool _value = false;
-  bool _loaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _value = prefs.getBool(widget.prefKey) ?? widget.defaultValue;
-      _loaded = true;
-    });
-  }
-
-  Future<void> _set(bool v) async {
-    setState(() => _value = v);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(widget.prefKey, v);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SwitchListTile(
-      contentPadding: EdgeInsets.zero,
-      value: _loaded ? _value : widget.defaultValue,
-      onChanged: _loaded ? _set : null,
-      secondary: widget.icon != null ? Icon(widget.icon) : null,
-      title: Text(widget.title, style: Theme.of(context).textTheme.titleSmall),
-      subtitle: Text(widget.subtitle, style: Theme.of(context).textTheme.bodySmall),
-    );
-  }
-}
-
 Widget _card(BuildContext context, List<Widget> children) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
@@ -90,43 +38,49 @@ Widget _card(BuildContext context, List<Widget> children) => Container(
       child: Column(children: children),
     );
 
-/// ===== Notificações =====
-class NotificationsSettingsScreen extends StatelessWidget {
-  const NotificationsSettingsScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsScaffold(
-      title: 'Notificações',
-      child: _card(context, const [
-        PrefSwitch(
-          prefKey: 'notif_status',
-          title: 'Atualizações da denúncia',
-          subtitle: 'Avisar quando o status mudar.',
-          icon: Icons.update_rounded,
-        ),
-        Divider(height: 1),
-        PrefSwitch(
-          prefKey: 'notif_alerts',
-          title: 'Alertas importantes',
-          subtitle: 'Pendências e comunicados importantes.',
-          icon: Icons.warning_amber_rounded,
-        ),
-        Divider(height: 1),
-        PrefSwitch(
-          prefKey: 'notif_news',
-          title: 'Novidades',
-          subtitle: 'Campanhas e informações úteis.',
-          defaultValue: false,
-          icon: Icons.campaign_rounded,
-        ),
-      ]),
+Widget _linkTile(BuildContext context, IconData icon, String title,
+        String subtitle, VoidCallback onTap) =>
+    ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: Text(title, style: Theme.of(context).textTheme.titleSmall),
+      subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+      trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+      onTap: onTap,
     );
-  }
+
+void _snack(BuildContext context, String msg, {bool error = false}) {
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(msg),
+    backgroundColor: error ? AppColors.danger : AppColors.success,
+  ));
 }
 
 /// ===== Segurança =====
-class SecuritySettingsScreen extends StatelessWidget {
+class SecuritySettingsScreen extends ConsumerStatefulWidget {
   const SecuritySettingsScreen({super.key});
+  @override
+  ConsumerState<SecuritySettingsScreen> createState() =>
+      _SecuritySettingsScreenState();
+}
+
+class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen> {
+  late bool _lock = ref.read(localStoreProvider).biometricLock;
+
+  Future<void> _toggle(bool v) async {
+    // Confirma a biometria antes de ligar/desligar: garante que funciona aqui.
+    final ok = await authenticateDevice(
+        v ? 'Confirme para ativar o bloqueio' : 'Confirme para desativar o bloqueio');
+    if (!mounted) return;
+    if (!ok) {
+      _snack(context, 'Biometria/PIN do aparelho indisponível ou não confirmado.',
+          error: true);
+      return;
+    }
+    await ref.read(localStoreProvider).setBiometricLock(v);
+    setState(() => _lock = v);
+  }
+
   @override
   Widget build(BuildContext context) {
     return _SettingsScaffold(
@@ -134,33 +88,29 @@ class SecuritySettingsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _card(context, const [
-            PrefSwitch(
-              prefKey: 'sec_biometric',
-              title: 'Bloqueio por biometria',
-              subtitle: 'Exigir digital/face ao abrir o app.',
-              defaultValue: false,
-              icon: Icons.fingerprint_rounded,
-            ),
-            Divider(height: 1),
-            PrefSwitch(
-              prefKey: 'sec_hide_preview',
-              title: 'Ocultar conteúdo em prévia',
-              subtitle: 'Esconder dados ao alternar apps.',
-              defaultValue: false,
-              icon: Icons.visibility_off_rounded,
+          _card(context, [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _lock,
+              onChanged: _toggle,
+              secondary: const Icon(Icons.fingerprint_rounded),
+              title: Text('Bloqueio por biometria',
+                  style: Theme.of(context).textTheme.titleSmall),
+              subtitle: Text(
+                  'Pedir digital, rosto ou PIN ao abrir o app.',
+                  style: Theme.of(context).textTheme.bodySmall),
             ),
           ]),
           const SizedBox(height: 16),
           _infoBox(context, Icons.verified_user_rounded,
-              'Suas denúncias trafegam de forma criptografada e o sigilo é garantido por lei.'),
+              'Toda comunicação com o servidor é criptografada (HTTPS).'),
         ],
       ),
     );
   }
 }
 
-/// ===== Privacidade =====
+/// ===== Privacidade e dados =====
 class PrivacySettingsScreen extends StatelessWidget {
   const PrivacySettingsScreen({super.key});
   @override
@@ -170,25 +120,26 @@ class PrivacySettingsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _card(context, const [
-            PrefSwitch(
-              prefKey: 'priv_anon',
-              title: 'Denúncia anônima por padrão',
-              subtitle: 'Não registrar sua identidade.',
-              icon: Icons.visibility_off_rounded,
-            ),
-            Divider(height: 1),
-            PrefSwitch(
-              prefKey: 'priv_location',
-              title: 'Compartilhar localização',
-              subtitle: 'Ajuda a localizar a ocorrência.',
-              defaultValue: false,
-              icon: Icons.place_rounded,
-            ),
+          _card(context, [
+            _linkTile(context, Icons.policy_outlined, 'Política de privacidade',
+                'Quais dados coletamos e por quê.',
+                () => openExternal(context, Uri.parse(AppConfig.privacyUrl))),
+            const Divider(height: 1),
+            _linkTile(
+                context,
+                Icons.delete_outline_rounded,
+                'Exclusão de dados',
+                'Como excluir sua conta e seus dados.',
+                () => openExternal(context, Uri.parse(AppConfig.deleteAccountUrl))),
+            const Divider(height: 1),
+            _linkTile(context, Icons.mail_outline_rounded, 'Falar sobre meus dados',
+                AppConfig.supportEmail,
+                () => sendEmail(context, AppConfig.supportEmail,
+                    subject: 'LGPD — LUMI')),
           ]),
           const SizedBox(height: 16),
           _infoBox(context, Icons.gavel_rounded,
-              'Tratamos seus dados conforme a LGPD (Lei 13.709/2018). Você pode solicitar exclusão a qualquer momento pela central de atendimento do app.'),
+              'Tratamos seus dados conforme a LGPD (Lei 13.709/2018). Denúncias anônimas não guardam dados de quem denuncia.'),
         ],
       ),
     );
@@ -196,13 +147,14 @@ class PrivacySettingsScreen extends StatelessWidget {
 }
 
 /// ===== Alterar senha =====
-class ChangePasswordScreen extends StatefulWidget {
+class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
   @override
-  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+  ConsumerState<ChangePasswordScreen> createState() =>
+      _ChangePasswordScreenState();
 }
 
-class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   final _form = GlobalKey<FormState>();
   final _current = TextEditingController();
   final _nova = TextEditingController();
@@ -220,15 +172,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
     setState(() => _saving = true);
-    await Future.delayed(const Duration(milliseconds: 700));
+    final error = await ref
+        .read(authControllerProvider.notifier)
+        .changePassword(_current.text, _nova.text);
     if (!mounted) return;
     setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Senha alterada com sucesso.'),
-        backgroundColor: AppColors.success,
-      ),
-    );
+    if (error != null) {
+      _snack(context, error, error: true);
+      return;
+    }
+    _snack(context, 'Senha alterada com sucesso.');
     Navigator.pop(context);
   }
 
@@ -246,6 +199,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               const SizedBox(height: 14),
               _field(_nova, 'Nova senha', validator: (v) {
                 if (v == null || v.length < 6) return 'Mínimo 6 caracteres';
+                if (v.length > 72) return 'Máximo 72 caracteres';
                 return null;
               }),
               const SizedBox(height: 14),
@@ -282,16 +236,117 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       );
 }
 
+/// ===== Excluir conta (exigência da Play para apps com cadastro) =====
+class DeleteAccountScreen extends ConsumerStatefulWidget {
+  const DeleteAccountScreen({super.key});
+  @override
+  ConsumerState<DeleteAccountScreen> createState() =>
+      _DeleteAccountScreenState();
+}
+
+class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
+  final _pass = TextEditingController();
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _pass.dispose();
+    super.dispose();
+  }
+
+  Future<void> _delete() async {
+    if (_pass.text.isEmpty) {
+      _snack(context, 'Digite sua senha para confirmar.', error: true);
+      return;
+    }
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir conta definitivamente?'),
+        content: const Text('Não dá para desfazer. Seus dados de cadastro serão apagados.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (sure != true || !mounted) return;
+    setState(() => _busy = true);
+    final error =
+        await ref.read(authControllerProvider.notifier).deleteAccount(_pass.text);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (error != null) {
+      _snack(context, error, error: true);
+      return;
+    }
+    // Sessão encerrada: o router volta para o login sozinho.
+    Navigator.of(context).popUntil((r) => r.isFirst);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return _SettingsScaffold(
+      title: 'Excluir conta',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('O que acontece', style: t.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            '• Seu nome, CPF, e-mail e senha são apagados do servidor.\n'
+            '• Denúncias já enviadas continuam registradas para apuração, sem '
+            'ligação com você.\n'
+            '• Os protocolos salvos neste aparelho continuam na lista até você removê-los.',
+            style: t.bodyMedium,
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: _pass,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Sua senha',
+              prefixIcon: Icon(Icons.lock_outline_rounded),
+            ),
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: _busy ? null : _delete,
+            icon: _busy
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2.2, color: Colors.white))
+                : const Icon(Icons.delete_forever_rounded),
+            label: const Text('Excluir minha conta'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// ===== Central de ajuda =====
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    final faqs = const [
+    const faqs = [
       ('Como faço uma denúncia?', 'Na tela inicial, escolha a categoria e responda as etapas. No fim, você recebe um número de protocolo.'),
-      ('Preciso me identificar?', 'Não. A denúncia pode ser totalmente anônima.'),
-      ('Como acompanho minha denúncia?', 'Vá em "Acompanhar" e informe o número de protocolo.'),
-      ('É seguro?', 'Sim. Os dados são criptografados e o sigilo é garantido por lei.'),
+      ('Preciso me identificar?', 'Não. A denúncia pode ser totalmente anônima, sem conta. Se quiser retorno, informe um e-mail na última etapa.'),
+      ('Como acompanho minha denúncia?', 'Vá em "Acompanhar". As denúncias enviadas por este aparelho já aparecem lá; outras você consulta pelo número do protocolo.'),
+      ('Perdi meu protocolo. E agora?', 'Se a denúncia foi enviada por este aparelho, ele está em "Acompanhar". Por segurança, não é possível recuperar o protocolo de outra forma.'),
+      ('A LUMI é um canal oficial?', 'Não. A LUMI é um aplicativo independente. Em emergência, ligue 190.'),
+      ('É seguro?', 'Sim. A comunicação é criptografada (HTTPS) e denúncias anônimas não guardam dados de quem denuncia.'),
     ];
     return _SettingsScaffold(
       title: 'Central de ajuda',
@@ -319,7 +374,14 @@ class HelpScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _infoBox(context, Icons.support_agent_rounded,
+          _card(context, [
+            _linkTile(context, Icons.support_agent_rounded, 'Falar com o suporte',
+                AppConfig.supportEmail,
+                () => sendEmail(context, AppConfig.supportEmail,
+                    subject: 'Ajuda — LUMI')),
+          ]),
+          const SizedBox(height: 16),
+          _infoBox(context, Icons.emergency_rounded,
               'Emergência com risco à vida: ligue 190. Direitos humanos: 100.'),
         ],
       ),
@@ -358,12 +420,21 @@ class AboutScreen extends StatelessWidget {
           Text('com você na proteção da vida',
               style: t.bodySmall, textAlign: TextAlign.center),
           const SizedBox(height: 4),
-          Text('Versão 1.0.3', style: t.labelSmall),
+          Text('Versão ${AppConfig.appVersion}', style: t.labelSmall),
           const SizedBox(height: 20),
           Text(
             'A LUMI é um aplicativo independente para registrar denúncias com segurança e sigilo, e acompanhar o andamento pelo número de protocolo. App independente — não é canal oficial de nenhum órgão público.',
             style: t.bodyMedium,
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => showLicensePage(
+              context: context,
+              applicationName: 'LUMI',
+              applicationVersion: AppConfig.appVersion,
+            ),
+            child: const Text('Licenças de software'),
           ),
         ],
       ),

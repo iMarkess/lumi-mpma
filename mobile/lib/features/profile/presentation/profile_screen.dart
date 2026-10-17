@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../core/config.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_card.dart';
@@ -67,7 +67,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        user?.institution ?? AppConstants.orgName,
+                        user?.email ?? user?.maskedCpf ?? AppConstants.orgName,
                         style: t.labelSmall?.copyWith(
                           color: Colors.white.withValues(alpha: 0.75),
                         ),
@@ -126,14 +126,16 @@ class ProfileScreen extends ConsumerWidget {
           Text('Conta e segurança', style: t.titleMedium),
           const SizedBox(height: 10),
           _MenuGroup(items: [
-            _MenuItem(Icons.lock_outline_rounded, 'Alterar senha',
-                () => const ChangePasswordScreen()),
+            if (user != null && !user.isGuest) ...[
+              _MenuItem(Icons.lock_outline_rounded, 'Alterar senha',
+                  () => const ChangePasswordScreen()),
+              _MenuItem(Icons.delete_outline_rounded, 'Excluir conta',
+                  () => const DeleteAccountScreen()),
+            ],
             _MenuItem(Icons.security_rounded, 'Segurança',
                 () => const SecuritySettingsScreen()),
             _MenuItem(Icons.privacy_tip_outlined, 'Privacidade',
                 () => const PrivacySettingsScreen()),
-            _MenuItem(Icons.notifications_active_outlined, 'Notificações',
-                () => const NotificationsSettingsScreen()),
           ]),
           const SizedBox(height: 16),
           Text('Suporte', style: t.titleMedium),
@@ -146,19 +148,26 @@ class ProfileScreen extends ConsumerWidget {
           ]),
           const SizedBox(height: 22),
 
-          // Sair
-          OutlinedButton.icon(
-            onPressed: () => _confirmLogout(context, ref),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.danger,
-              side: const BorderSide(color: AppColors.danger),
+          // Sair / entrar
+          if (user == null || user.isGuest)
+            FilledButton.tonalIcon(
+              onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+              icon: const Icon(Icons.login_rounded),
+              label: const Text('Entrar ou criar conta'),
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: () => _confirmLogout(context, ref),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.danger,
+                side: const BorderSide(color: AppColors.danger),
+              ),
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Sair da conta'),
             ),
-            icon: const Icon(Icons.logout_rounded),
-            label: const Text('Sair da conta'),
-          ),
           const SizedBox(height: 16),
           Center(
-            child: Text('LUMI · versão 1.0.0',
+            child: Text('LUMI · versão ${AppConfig.appVersion}',
                 style: t.labelSmall),
           ),
         ],
@@ -171,7 +180,8 @@ class ProfileScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Sair da conta?'),
-        content: const Text('Você precisará entrar novamente para acessar a área restrita.'),
+        content: const Text(
+            'Você precisará entrar de novo. As denúncias salvas neste aparelho continuam em Acompanhar.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -181,8 +191,8 @@ class ProfileScreen extends ConsumerWidget {
             style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () async {
               Navigator.pop(ctx);
+              // O router volta para o login sozinho.
               await ref.read(authControllerProvider.notifier).logout();
-              if (context.mounted) context.go('/login');
             },
             child: const Text('Sair'),
           ),

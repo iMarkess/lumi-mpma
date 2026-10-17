@@ -3,9 +3,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/cpf_formatter.dart';
+import '../../../core/utils/launcher.dart';
 import '../../profile/presentation/theme_controller.dart';
 import 'auth_controller.dart';
 
@@ -17,14 +18,14 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _cpf = TextEditingController();
+  final _id = TextEditingController();
   final _pass = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
 
   @override
   void dispose() {
-    _cpf.dispose();
+    _id.dispose();
     _pass.dispose();
     super.dispose();
   }
@@ -32,27 +33,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    final ok = await ref.read(authControllerProvider.notifier).login(
-          _cpf.text,
-          _pass.text,
-        );
-    if (ok && mounted) context.go('/home');
-  }
-
-  Future<void> _biometric() async {
-    final ok =
-        await ref.read(authControllerProvider.notifier).loginWithBiometrics();
-    if (ok && mounted) context.go('/home');
-  }
-
-  Future<void> _google() async {
-    final ok = await ref.read(authControllerProvider.notifier).loginWithGoogle();
-    if (ok && mounted) context.go('/home');
-  }
-
-  void _guest() {
-    ref.read(authControllerProvider.notifier).continueAsGuest();
-    context.go('/home');
+    // O router leva para a Home sozinho quando a sessão é criada.
+    await ref.read(authControllerProvider.notifier).login(_id.text, _pass.text);
   }
 
   @override
@@ -140,7 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Cartão de login
+                  // Denúncia anônima: caminho principal, sem cadastro
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
@@ -156,40 +138,84 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ],
                     ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.visibility_off_rounded,
+                                color: AppColors.success),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text('Denunciar sem se identificar',
+                                  style: t.titleMedium),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Não precisa de cadastro. Você recebe um protocolo para acompanhar.',
+                          style: t.bodySmall,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: state.loading
+                              ? null
+                              : () => ref
+                                  .read(authControllerProvider.notifier)
+                                  .continueAsGuest(),
+                          icon: const Icon(Icons.arrow_forward_rounded),
+                          label: const Text('Continuar sem conta'),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 100.ms).moveY(begin: 20, end: 0),
+                  const SizedBox(height: 16),
+
+                  // Login da conta de cidadão
+                  Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: scheme.outlineVariant),
+                    ),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Acesso restrito', style: t.titleLarge),
+                          Text('Já tenho conta', style: t.titleMedium),
                           const SizedBox(height: 4),
                           Text(
-                            'Servidores autorizados entram com CPF e senha.',
+                            'Entre com seu CPF ou e-mail e senha.',
                             style: t.bodySmall,
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 18),
                           TextFormField(
-                            controller: _cpf,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [CpfInputFormatter()],
+                            controller: _id,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.username],
+                            textInputAction: TextInputAction.next,
                             decoration: const InputDecoration(
-                              labelText: 'CPF',
-                              hintText: '000.000.000-00',
+                              labelText: 'CPF ou e-mail',
                               prefixIcon: Icon(Icons.badge_outlined),
                             ),
-                            validator: (v) =>
-                                (v == null || v.replaceAll(RegExp(r'\D'), '').length < 11)
-                                    ? 'Informe um CPF válido'
-                                    : null,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Informe seu CPF ou e-mail'
+                                : null,
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
                             controller: _pass,
                             obscureText: _obscure,
+                            autofillHints: const [AutofillHints.password],
+                            onFieldSubmitted: (_) => _submit(),
                             decoration: InputDecoration(
                               labelText: 'Senha',
                               prefixIcon: const Icon(Icons.lock_outline_rounded),
                               suffixIcon: IconButton(
+                                tooltip: _obscure ? 'Mostrar senha' : 'Ocultar senha',
                                 onPressed: () =>
                                     setState(() => _obscure = !_obscure),
                                 icon: Icon(
@@ -210,51 +236,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               child: const Text('Esqueci minha senha'),
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          FilledButton(
-                            onPressed: state.loading ? null : _submit,
-                            child: state.loading
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.4,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text('Entrar'),
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            onPressed: state.loading ? null : _biometric,
-                            icon: const Icon(Icons.fingerprint_rounded),
-                            label: const Text('Entrar com biometria'),
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            onPressed: state.loading ? null : _google,
-                            icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
-                            label: const Text('Continuar com o Google'),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: state.loading ? null : _submit,
+                              child: state.loading
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2.4),
+                                    )
+                                  : const Text('Entrar'),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ).animate().fadeIn(delay: 150.ms).moveY(begin: 20, end: 0),
+                  ).animate().fadeIn(delay: 180.ms).moveY(begin: 20, end: 0),
 
-                  const SizedBox(height: 18),
-                  // Cidadão
-                  TextButton.icon(
-                    onPressed: _guest,
-                    icon: Icon(Icons.arrow_forward_rounded,
-                        color: scheme.onSurfaceVariant),
-                    label: Text(
-                      'Continuar como cidadão',
-                      style: t.labelLarge?.copyWith(color: scheme.onSurface),
-                    ),
+                  const SizedBox(height: 14),
+                  TextButton(
+                    onPressed: state.loading ? null : () => context.push('/cadastro'),
+                    child: const Text('Não tem conta? Criar conta'),
                   ),
-                  Text(
-                    'Denuncie de forma anônima, sem cadastro.',
-                    style: t.bodySmall,
+                  TextButton(
+                    onPressed: () =>
+                        openExternal(context, Uri.parse(AppConfig.privacyUrl)),
+                    child: Text('Política de privacidade', style: t.bodySmall),
                   ),
                 ],
               ),
@@ -268,46 +277,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _showForgot(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          8,
-          24,
-          MediaQuery.viewInsetsOf(ctx).bottom + 28,
-        ),
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Recuperar senha',
-                style: Theme.of(ctx).textTheme.titleLarge),
+            Text('Recuperar senha', style: Theme.of(ctx).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
-              'Informe seu CPF. Enviaremos as instruções de redefinição para o e-mail cadastrado.',
+              'Envie um e-mail para o suporte informando o CPF ou e-mail da conta. '
+              'Respondemos com as instruções para redefinir a senha.',
               style: Theme.of(ctx).textTheme.bodyMedium,
             ),
             const SizedBox(height: 18),
-            TextField(
-              keyboardType: TextInputType.number,
-              inputFormatters: [CpfInputFormatter()],
-              decoration: const InputDecoration(
-                labelText: 'CPF',
-                prefixIcon: Icon(Icons.badge_outlined),
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
+            FilledButton.icon(
               onPressed: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Instruções enviadas, se o CPF existir.'),
-                  ),
-                );
+                sendEmail(context, AppConfig.supportEmail,
+                    subject: 'Recuperar senha — LUMI');
               },
-              child: const Text('Enviar instruções'),
+              icon: const Icon(Icons.mail_outline_rounded),
+              label: const Text('Escrever para o suporte'),
             ),
           ],
         ),

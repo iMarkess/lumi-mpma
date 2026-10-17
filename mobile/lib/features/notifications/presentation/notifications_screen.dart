@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/date_format.dart';
 import '../../../core/widgets/app_card.dart';
@@ -8,21 +9,14 @@ import '../../../core/widgets/shimmer_box.dart';
 import '../data/notification_repository.dart';
 import '../domain/app_notification.dart';
 
-class NotificationsScreen extends ConsumerStatefulWidget {
+class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() =>
-      _NotificationsScreenState();
-}
-
-class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
-  NotificationKind? _filter;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
     final async = ref.watch(notificationsControllerProvider);
+    final unread = ref.watch(unreadCountProvider);
 
     return SafeArea(
       bottom: false,
@@ -30,50 +24,40 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         onRefresh: () async =>
             ref.refresh(notificationsControllerProvider.future),
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
           children: [
             Row(
               children: [
                 Expanded(child: Text('Notificações', style: t.headlineSmall)),
-                TextButton.icon(
-                  onPressed: () => ref
-                      .read(notificationsControllerProvider.notifier)
-                      .markAllRead(),
-                  icon: const Icon(Icons.done_all_rounded, size: 18),
-                  label: const Text('Marcar lidas'),
-                ),
+                if (unread > 0)
+                  TextButton.icon(
+                    onPressed: () => ref
+                        .read(notificationsControllerProvider.notifier)
+                        .markAllRead(),
+                    icon: const Icon(Icons.done_all_rounded, size: 18),
+                    label: const Text('Marcar lidas'),
+                  ),
               ],
             ),
-            const SizedBox(height: 8),
-
-            // Filtros
-            SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _chip('Todas', _filter == null, () {
-                    setState(() => _filter = null);
-                  }),
-                  for (final k in NotificationKind.values)
-                    _chip(k.label, _filter == k, () {
-                      setState(() => _filter = k);
-                    }),
-                ],
-              ),
+            const SizedBox(height: 4),
+            Text(
+              'Atualizações das denúncias que você acompanha neste aparelho.',
+              style: t.bodySmall,
             ),
-            const SizedBox(height: 12),
-
+            const SizedBox(height: 16),
             async.when(
-              data: (list) {
-                final items = _filter == null
-                    ? list
-                    : list.where((n) => n.kind == _filter).toList();
+              data: (items) {
                 if (items.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.notifications_off_outlined,
                     title: 'Nenhuma notificação',
-                    message: 'Você está em dia por aqui.',
+                    message:
+                        'Quando você enviar ou consultar uma denúncia, as atualizações aparecem aqui.',
+                    action: FilledButton.tonal(
+                      onPressed: () => context.go('/denunciar'),
+                      child: const Text('Fazer uma denúncia'),
+                    ),
                   );
                 }
                 return Column(
@@ -83,30 +67,33 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _NotificationTile(
                           n: n,
-                          onTap: () => ref
-                              .read(notificationsControllerProvider.notifier)
-                              .markRead(n.id),
+                          onTap: () {
+                            ref
+                                .read(notificationsControllerProvider.notifier)
+                                .markRead(n.id);
+                            if (n.protocol != null) {
+                              context.go('/acompanhar?p=${n.protocol}');
+                            }
+                          },
                         ),
                       ),
                   ],
                 );
               },
-              loading: () => const ShimmerList(count: 5),
-              error: (_, __) => Text('Erro ao carregar.', style: t.bodyMedium),
+              loading: () => const ShimmerList(count: 4),
+              error: (e, __) => EmptyState(
+                icon: Icons.cloud_off_rounded,
+                title: 'Não foi possível carregar',
+                message: '$e',
+                action: FilledButton.tonal(
+                  onPressed: () =>
+                      ref.invalidate(notificationsControllerProvider),
+                  child: const Text('Tentar de novo'),
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _chip(String label, bool selected, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
       ),
     );
   }
@@ -166,8 +153,7 @@ class _NotificationTile extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(n.body, style: t.bodySmall),
                 const SizedBox(height: 6),
-                Text(DateFmt.relative(n.date),
-                    style: t.labelSmall),
+                Text(DateFmt.relative(n.date), style: t.labelSmall),
               ],
             ),
           ),

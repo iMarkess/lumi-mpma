@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/register_screen.dart';
 import '../../features/shell/presentation/home_shell.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/complaints/presentation/denunciar_screen.dart';
@@ -14,16 +16,40 @@ import '../../features/profile/presentation/profile_screen.dart';
 final _rootKey = GlobalKey<NavigatorState>();
 final _shellKey = GlobalKey<NavigatorState>();
 
-/// Router principal. A entrada é o login; o cidadão pode seguir como convidado.
+const _publicPaths = {'/login', '/cadastro'};
+
+/// Router principal. Sem sessão, tudo leva ao login; com sessão (conta ou
+/// anônimo), o login some e o app abre direto na Home.
 final routerProvider = Provider<GoRouter>((ref) {
+  final authed = ValueNotifier<bool>(
+    ref.read(authControllerProvider).isAuthenticated,
+  );
+  ref.listen(
+    authControllerProvider,
+    (_, next) => authed.value = next.isAuthenticated,
+  );
+  ref.onDispose(authed.dispose);
+
   return GoRouter(
     navigatorKey: _rootKey,
-    initialLocation: '/login',
+    initialLocation: authed.value ? '/home' : '/login',
+    refreshListenable: authed,
+    redirect: (_, state) {
+      final atPublic = _publicPaths.contains(state.matchedLocation);
+      if (!authed.value && !atPublic) return '/login';
+      if (authed.value && atPublic) return '/home';
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/login',
         name: 'login',
         builder: (_, __) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/cadastro',
+        name: 'cadastro',
+        builder: (_, __) => const RegisterScreen(),
       ),
 
       // Shell com bottom navigation (5 abas)
@@ -62,7 +88,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(
               path: '/acompanhar',
               name: 'acompanhar',
-              builder: (_, __) => const AcompanharScreen(),
+              // ?p=PROTOCOLO abre a consulta já preenchida.
+              builder: (_, state) => AcompanharScreen(
+                protocol: state.uri.queryParameters['p'],
+              ),
             ),
           ]),
           StatefulShellBranch(routes: [

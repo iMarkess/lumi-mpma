@@ -2,11 +2,8 @@ import '../../../core/constants/app_constants.dart';
 import '../domain/complaint.dart';
 
 /// Contrato de dados de denúncias.
-///
-/// Troque [MockComplaintRepository] por uma implementação HTTP
-/// (`ApiComplaintRepository`) apontando para a API real do LUMI —
-/// nenhuma tela precisa mudar.
 abstract class ComplaintRepository {
+  /// Denúncias enviadas a partir deste aparelho (status atualizado).
   Future<List<Complaint>> recent();
   Future<Complaint?> byProtocol(String protocol);
   Future<Complaint> submit({
@@ -16,53 +13,16 @@ abstract class ComplaintRepository {
     required String description,
     required ComplaintPriority priority,
     required bool anonymous,
+    String? contactEmail,
   });
+
+  /// Tira o protocolo da lista "minhas denúncias" deste aparelho.
+  Future<void> forget(String protocol);
 }
 
-/// Implementação mock em memória — permite rodar o app 100% sem backend.
+/// Implementação em memória — só para rodar o app sem backend.
 class MockComplaintRepository implements ComplaintRepository {
-  final List<Complaint> _items = [
-    Complaint(
-      id: 'LUMI-X82J91',
-      category: ComplaintCategory.child,
-      title: 'Possível negligência em escola',
-      location: 'São Luís',
-      status: ComplaintStatus.recebida,
-      priority: ComplaintPriority.alta,
-      date: DateTime.now().subtract(const Duration(hours: 3)),
-      description: 'Relato de negligência sistemática com alunos.',
-    ),
-    Complaint(
-      id: 'LUMI-A72K12',
-      category: ComplaintCategory.env,
-      title: 'Queimada irregular em terreno',
-      location: 'Imperatriz',
-      status: ComplaintStatus.emTriagem,
-      priority: ComplaintPriority.media,
-      date: DateTime.now().subtract(const Duration(hours: 9)),
-      description: 'Fogo em área de proteção ambiental.',
-    ),
-    Complaint(
-      id: 'LUMI-B33L90',
-      category: ComplaintCategory.elderly,
-      title: 'Maus-tratos por familiar',
-      location: 'Caxias',
-      status: ComplaintStatus.emAnalise,
-      priority: ComplaintPriority.alta,
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      description: 'Idoso em situação de abandono.',
-    ),
-    Complaint(
-      id: 'LUMI-E44N10',
-      category: ComplaintCategory.env,
-      title: 'Descarte de lixo em rio',
-      location: 'Paço do Lumiar',
-      status: ComplaintStatus.concluida,
-      priority: ComplaintPriority.baixa,
-      date: DateTime.now().subtract(const Duration(days: 4)),
-      description: 'Empresa descartando resíduos no rio.',
-    ),
-  ];
+  final List<Complaint> _items = [];
 
   @override
   Future<List<Complaint>> recent() async {
@@ -74,11 +34,10 @@ class MockComplaintRepository implements ComplaintRepository {
   Future<Complaint?> byProtocol(String protocol) async {
     await Future.delayed(AppConstants.mockLatency);
     final clean = protocol.trim().toUpperCase();
-    try {
-      return _items.firstWhere((c) => c.id.toUpperCase() == clean);
-    } catch (_) {
-      return null;
+    for (final c in _items) {
+      if (c.id.toUpperCase() == clean) return c;
     }
+    return null;
   }
 
   @override
@@ -89,6 +48,7 @@ class MockComplaintRepository implements ComplaintRepository {
     required String description,
     required ComplaintPriority priority,
     required bool anonymous,
+    String? contactEmail,
   }) async {
     await Future.delayed(AppConstants.mockLatency);
     final protocol =
@@ -107,4 +67,8 @@ class MockComplaintRepository implements ComplaintRepository {
     _items.insert(0, complaint);
     return complaint;
   }
+
+  @override
+  Future<void> forget(String protocol) async =>
+      _items.removeWhere((c) => c.id == protocol);
 }

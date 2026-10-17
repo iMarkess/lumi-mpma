@@ -23,7 +23,7 @@ enum ComplaintStatus {
   recebida('recebida', 'Recebida', AppColors.info),
   emTriagem('em_triagem', 'Em triagem', AppColors.warning),
   emAnalise('em_analise', 'Em análise', AppColors.primary),
-  concluida('concluída', 'Concluída', AppColors.success),
+  concluida('concluida', 'Concluída', AppColors.success),
   rejeitada('rejeitada', 'Rejeitada', AppColors.danger);
 
   const ComplaintStatus(this.id, this.label, this.color);
@@ -58,6 +58,14 @@ enum ComplaintPriority {
   final Color color;
 }
 
+/// Passo da timeline (mudança de status registrada pela equipe).
+class ComplaintEvent {
+  const ComplaintEvent({required this.status, required this.date, this.note});
+  final ComplaintStatus status;
+  final DateTime date;
+  final String? note;
+}
+
 class Complaint {
   const Complaint({
     required this.id,
@@ -69,6 +77,7 @@ class Complaint {
     required this.date,
     required this.description,
     this.anonymous = true,
+    this.events = const [],
   });
 
   final String id;
@@ -80,16 +89,5 @@ class Complaint {
   final DateTime date;
   final String description;
   final bool anonymous;
-
-  Complaint copyWith({ComplaintStatus? status}) => Complaint(
-        id: id,
-        category: category,
-        title: title,
-        location: location,
-        status: status ?? this.status,
-        priority: priority,
-        date: date,
-        description: description,
-        anonymous: anonymous,
-      );
+  final List<ComplaintEvent> events;
 }

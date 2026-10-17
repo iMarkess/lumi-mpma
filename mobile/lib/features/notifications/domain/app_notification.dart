@@ -20,6 +20,7 @@ class AppNotification {
     required this.title,
     required this.body,
     required this.date,
+    this.protocol,
     this.read = false,
   });
 
@@ -28,5 +29,6 @@ class AppNotification {
   final String title;
   final String body;
   final DateTime date;
+  final String? protocol;
   bool read;
 }

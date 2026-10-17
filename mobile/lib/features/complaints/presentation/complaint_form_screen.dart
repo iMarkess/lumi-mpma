@@ -4,12 +4,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../domain/complaint.dart';
 import 'providers.dart';
 
 /// Tipos de campo do formulário (espelham o site).
-enum FieldType { text, textarea, radio, emoji }
+enum FieldType { text, textarea, radio, emoji, identify }
 
 class StepDef {
   const StepDef({
@@ -18,23 +20,45 @@ class StepDef {
     required this.type,
     required this.field,
     this.options = const [],
+    this.optional = false,
   });
   final String title;
   final String question;
   final FieldType type;
   final String field;
   final List<String> options;
+  final bool optional;
 }
+
+/// Última etapa de todas as categorias: anônimo ou com contato.
+const _identifyStep = StepDef(
+  title: 'Identificação',
+  question: 'Quer receber retorno por e-mail ou prefere ficar anônimo?',
+  type: FieldType.identify,
+  field: 'identify',
+  optional: true,
+);
+
+/// Rótulos usados ao montar o texto enviado à equipe.
+const _answerLabels = {
+  'victim_name': 'Pessoa envolvida',
+  'victim_age': 'Idade aproximada',
+  'victim_type': 'Perfil da pessoa',
+  'is_urgent': 'Em risco agora',
+  'emotions': 'Como o denunciante se sente',
+};
+
+final _emailRe = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
 /// Mesmas perguntas do site (app/denunciar/[type]/page.tsx).
 const Map<String, List<StepDef>> _stepsByCategory = {
   'child': [
     StepDef(
       title: 'Sobre quem precisa de ajuda',
-      question:
-          'Quem é a criança ou adolescente que precisa de ajuda? (se souber, informe nome ou apelido)',
+      question: 'Quem é a criança ou adolescente que precisa de ajuda? (se souber, informe nome ou apelido)',
       type: FieldType.text,
       field: 'victim_name',
+      optional: true,
     ),
     StepDef(
       title: 'Como você se sente?',
@@ -47,7 +71,13 @@ const Map<String, List<StepDef>> _stepsByCategory = {
       question: 'Você sabe a idade da criança ou adolescente?',
       type: FieldType.radio,
       field: 'victim_age',
-      options: ['Não sei', '0 a 5 anos', '6 a 10 anos', '11 a 14 anos', '15 a 17 anos'],
+      options: [
+        'Não sei',
+        '0 a 5 anos',
+        '6 a 10 anos',
+        '11 a 14 anos',
+        '15 a 17 anos',
+      ],
     ),
     StepDef(
       title: 'O que está acontecendo',
@@ -66,21 +96,27 @@ const Map<String, List<StepDef>> _stepsByCategory = {
   'elderly': [
     StepDef(
       title: 'Sobre quem precisa de ajuda',
-      question:
-          'Quem é a pessoa que precisa de ajuda? (se souber, informe nome ou apelido)',
+      question: 'Quem é a pessoa que precisa de ajuda? (se souber, informe nome ou apelido)',
       type: FieldType.text,
       field: 'victim_name',
+      optional: true,
     ),
     StepDef(
       title: 'Perfil da pessoa',
       question: 'A situação envolve:',
       type: FieldType.radio,
       field: 'victim_type',
-      options: ['Pessoa idosa', 'Pessoa com deficiência', 'Ambos', 'Não sei informar'],
+      options: [
+        'Pessoa idosa',
+        'Pessoa com deficiência',
+        'Ambos',
+        'Não sei informar',
+      ],
     ),
     StepDef(
       title: 'O que está acontecendo',
-      question: 'Você pode descrever, com suas palavras, o que está acontecendo?',
+      question:
+          'Você pode descrever, com suas palavras, o que está acontecendo?',
       type: FieldType.textarea,
       field: 'description',
     ),
@@ -95,7 +131,8 @@ const Map<String, List<StepDef>> _stepsByCategory = {
   'env': [
     StepDef(
       title: 'Descrição do fato',
-      question: 'Você pode descrever, com suas palavras, o que está acontecendo?',
+      question:
+          'Você pode descrever, com suas palavras, o que está acontecendo?',
       type: FieldType.textarea,
       field: 'description',
     ),
@@ -107,7 +144,8 @@ const Map<String, List<StepDef>> _stepsByCategory = {
     ),
     StepDef(
       title: 'Situação de risco',
-      question: 'Há risco imediato à saúde das pessoas, animais ou ao meio ambiente?',
+      question:
+          'Há risco imediato à saúde das pessoas, animais ou ao meio ambiente?',
       type: FieldType.radio,
       field: 'is_urgent',
       options: ['Sim', 'Não', 'Não sei'],
@@ -122,7 +160,8 @@ class ComplaintFormScreen extends ConsumerStatefulWidget {
   final String type;
 
   @override
-  ConsumerState<ComplaintFormScreen> createState() => _ComplaintFormScreenState();
+  ConsumerState<ComplaintFormScreen> createState() =>
+      _ComplaintFormScreenState();
 }
 
 class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
@@ -130,41 +169,64 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
   bool _submitting = false;
   final Map<String, String> _answers = {};
   final _textController = TextEditingController();
+  final _emailController = TextEditingController();
+  bool _anonymous = true;
 
   ComplaintCategory get _category => ComplaintCategory.fromId(widget.type);
-  List<StepDef> get _steps => _stepsByCategory[widget.type] ?? _stepsByCategory['child']!;
+  List<StepDef> get _steps => [
+    ...?(_stepsByCategory[widget.type] ?? _stepsByCategory['child']),
+    _identifyStep,
+  ];
   StepDef get _current => _steps[_step];
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.text = ref.read(authControllerProvider).user?.email ?? '';
+  }
 
   @override
   void dispose() {
     _textController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
   void _syncControllerFromAnswer() {
-    if (_current.type == FieldType.text || _current.type == FieldType.textarea) {
+    if (_current.type == FieldType.text ||
+        _current.type == FieldType.textarea) {
       _textController.text = _answers[_current.field] ?? '';
-      _textController.selection =
-          TextSelection.collapsed(offset: _textController.text.length);
+      _textController.selection = TextSelection.collapsed(
+        offset: _textController.text.length,
+      );
     }
   }
 
   bool get _canAdvance {
     final v = _answers[_current.field]?.trim() ?? '';
+    if (_current.type == FieldType.identify) {
+      return _anonymous || _emailRe.hasMatch(_emailController.text.trim());
+    }
     // Descrição precisa de ao menos 10 caracteres (regra do servidor).
     if (_current.type == FieldType.textarea) return v.length >= 10;
-    if (_current.type == FieldType.text) return v.isNotEmpty;
+    if (_current.optional) return true;
     return v.isNotEmpty;
   }
 
   void _next() {
-    if (_current.type == FieldType.text || _current.type == FieldType.textarea) {
+    if (_current.type == FieldType.text ||
+        _current.type == FieldType.textarea) {
       _answers[_current.field] = _textController.text.trim();
     }
     if (!_canAdvance) {
-      final msg = _current.type == FieldType.textarea
-          ? 'Descreva com mais detalhes (mínimo 10 letras).'
-          : 'Preencha para continuar.';
+      final msg = switch (_current.type) {
+        FieldType.textarea => 'Descreva com mais detalhes (mínimo 10 letras).',
+        FieldType.identify =>
+          'Informe um e-mail válido ou escolha ficar anônimo.',
+        FieldType.radio ||
+        FieldType.emoji => 'Escolha uma opção para continuar.',
+        FieldType.text => 'Preencha para continuar.',
+      };
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       return;
     }
@@ -178,7 +240,8 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
   }
 
   void _back() {
-    if (_current.type == FieldType.text || _current.type == FieldType.textarea) {
+    if (_current.type == FieldType.text ||
+        _current.type == FieldType.textarea) {
       _answers[_current.field] = _textController.text.trim();
     }
     if (_step > 0) {
@@ -193,24 +256,34 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
     setState(() => _submitting = true);
     HapticFeedback.mediumImpact();
     final victim = _answers['victim_name']?.trim() ?? '';
-    final title = victim.isNotEmpty ? 'Denúncia: $victim' : 'Denúncia ${_category.label}';
+    var title = victim.isNotEmpty
+        ? 'Denúncia: $victim'
+        : 'Denúncia ${_category.label}';
+    if (title.length > 150) title = '${title.substring(0, 150)}…';
     final urgent = _answers['is_urgent'] == 'Sim';
     try {
-      final complaint = await ref.read(complaintRepositoryProvider).submit(
+      final complaint = await ref
+          .read(complaintRepositoryProvider)
+          .submit(
             category: _category,
             title: title,
             location: _answers['location']?.trim() ?? '',
-            description: _answers['description']?.trim() ?? '',
+            description: _composeDescription(),
             priority: urgent ? ComplaintPriority.alta : ComplaintPriority.media,
-            anonymous: true,
+            anonymous: _anonymous,
+            contactEmail: _anonymous ? null : _emailController.text.trim(),
           );
       ref.invalidate(recentComplaintsProvider);
       if (mounted) _showSuccess(complaint.id);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Não foi possível enviar. Verifique a conexão.'),
+          SnackBar(
+            content: Text(
+              e is ApiException
+                  ? e.message
+                  : 'Não foi possível enviar. Verifique a conexão.',
+            ),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -220,110 +293,149 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
     }
   }
 
+  /// Relato + respostas das outras etapas, para a equipe ver tudo.
+  String _composeDescription() {
+    final extra = [
+      for (final e in _answerLabels.entries)
+        if ((_answers[e.key]?.trim() ?? '').isNotEmpty)
+          '${e.value}: ${_answers[e.key]!.trim()}',
+    ];
+    final text = [
+      _answers['description']?.trim() ?? '',
+      if (extra.isNotEmpty)
+        '\n— Informações do formulário —\n${extra.join('\n')}',
+    ].join('\n');
+    return text.length > 4000 ? text.substring(0, 4000) : text;
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     final progress = (_step + 1) / _steps.length;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_category.label),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: _back,
+    // Voltar do sistema volta uma etapa, sem perder o que já foi respondido.
+    return PopScope(
+      canPop: _step == 0 && !_submitting,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_submitting) _back();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_category.label),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: _back,
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Progresso
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Etapa ${_step + 1} de ${_steps.length}',
-                          style: t.labelMedium),
-                      Text('${(progress * 100).round()}%', style: t.labelMedium),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 8,
-                      backgroundColor: scheme.surfaceContainerHigh,
-                      color: _category.color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Progresso
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
                 child: Column(
-                  key: ValueKey(_step),
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_current.title.toUpperCase(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Etapa ${_step + 1} de ${_steps.length}',
+                          style: t.labelMedium,
+                        ),
+                        Text(
+                          '${(progress * 100).round()}%',
+                          style: t.labelMedium,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 8,
+                        backgroundColor: scheme.surfaceContainerHigh,
+                        color: _category.color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                  child: Column(
+                    key: ValueKey(_step),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _current.title.toUpperCase(),
                         style: t.labelMedium?.copyWith(
                           color: _category.color,
                           letterSpacing: 1,
-                        )),
-                    const SizedBox(height: 8),
-                    Text(_current.question, style: t.headlineSmall),
-                    const SizedBox(height: 24),
-                    _buildField(),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(_current.question, style: t.headlineSmall),
+                      const SizedBox(height: 24),
+                      _buildField(),
+                    ],
+                  ).animate().fadeIn(duration: 250.ms).moveX(begin: 16, end: 0),
+                ),
+              ),
+              // Rodapé
+              Container(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  12,
+                  20,
+                  12 + MediaQuery.paddingOf(context).bottom,
+                ),
+                decoration: BoxDecoration(
+                  color: scheme.surface,
+                  border: Border(top: BorderSide(color: scheme.outlineVariant)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _submitting ? null : _back,
+                        icon: const Icon(Icons.chevron_left_rounded),
+                        label: const Text('Voltar'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton.icon(
+                        onPressed: _submitting ? null : _next,
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Icon(
+                                _step == _steps.length - 1
+                                    ? Icons.send_rounded
+                                    : Icons.chevron_right_rounded,
+                              ),
+                        label: Text(
+                          _step == _steps.length - 1
+                              ? 'Enviar denúncia'
+                              : 'Próximo',
+                        ),
+                      ),
+                    ),
                   ],
-                ).animate().fadeIn(duration: 250.ms).moveX(begin: 16, end: 0),
+                ),
               ),
-            ),
-            // Rodapé
-            Container(
-              padding: EdgeInsets.fromLTRB(
-                  20, 12, 20, 12 + MediaQuery.paddingOf(context).bottom),
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                border: Border(top: BorderSide(color: scheme.outlineVariant)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _submitting ? null : _back,
-                      icon: const Icon(Icons.chevron_left_rounded),
-                      label: const Text('Voltar'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: FilledButton.icon(
-                      onPressed: _submitting ? null : _next,
-                      icon: _submitting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2.2, color: Colors.white),
-                            )
-                          : Icon(_step == _steps.length - 1
-                              ? Icons.send_rounded
-                              : Icons.chevron_right_rounded),
-                      label: Text(_step == _steps.length - 1
-                          ? 'Enviar denúncia'
-                          : 'Próximo'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -331,17 +443,54 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
 
   Widget _buildField() {
     switch (_current.type) {
+      case FieldType.identify:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _anonymous,
+              onChanged: (v) => setState(() => _anonymous = v),
+              secondary: const Icon(Icons.visibility_off_rounded),
+              title: const Text('Denúncia anônima'),
+              subtitle: const Text(
+                'Nenhum dado seu é enviado junto com o relato.',
+              ),
+            ),
+            if (!_anonymous) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'E-mail para contato',
+                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Usado só para a equipe falar com você sobre esta denúncia.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+        );
       case FieldType.text:
         return TextField(
           controller: _textController,
           textCapitalization: TextCapitalization.sentences,
           onChanged: (v) => _answers[_current.field] = v,
-          decoration: const InputDecoration(hintText: 'Digite aqui...'),
+          decoration: InputDecoration(
+            hintText: _current.optional
+                ? 'Opcional — pode deixar em branco'
+                : 'Digite aqui...',
+          ),
         );
       case FieldType.textarea:
         return TextField(
           controller: _textController,
           maxLines: 6,
+          maxLength: 3500,
           textCapitalization: TextCapitalization.sentences,
           onChanged: (v) => _answers[_current.field] = v,
           decoration: const InputDecoration(
@@ -387,7 +536,10 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
                 onTap: () => setState(() => _answers[_current.field] = opt),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: active
                         ? _category.color.withValues(alpha: 0.1)
@@ -413,8 +565,10 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(opt,
-                            style: Theme.of(context).textTheme.titleSmall),
+                        child: Text(
+                          opt,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
                       ),
                     ],
                   ),
@@ -444,13 +598,20 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
                 color: AppColors.success.withValues(alpha: 0.14),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check_rounded, color: AppColors.success, size: 40),
+              child: const Icon(
+                Icons.check_rounded,
+                color: AppColors.success,
+                size: 40,
+              ),
             ),
             const SizedBox(height: 16),
-            Text('Denúncia enviada!', style: Theme.of(ctx).textTheme.titleLarge),
+            Text(
+              'Denúncia enviada!',
+              style: Theme.of(ctx).textTheme.titleLarge,
+            ),
             const SizedBox(height: 8),
             Text(
-              'Registrada e em triagem inicial. Guarde seu protocolo:',
+              'Registrada com sucesso. Guarde seu protocolo — ele também fica salvo em Acompanhar:',
               style: Theme.of(ctx).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -464,8 +625,11 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(protocol,
-                      style: Theme.of(ctx).textTheme.titleMedium?.copyWith(letterSpacing: 1)),
+                  Text(
+                    protocol,
+                    style: Theme.of(ctx).textTheme.titleMedium
+                        ?.copyWith(letterSpacing: 1),
+                  ),
                   const SizedBox(width: 10),
                   IconButton(
                     visualDensity: VisualDensity.compact,
@@ -484,7 +648,7 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
             FilledButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                context.go('/acompanhar');
+                context.go('/acompanhar?p=$protocol');
               },
               child: const Text('Acompanhar denúncia'),
             ),

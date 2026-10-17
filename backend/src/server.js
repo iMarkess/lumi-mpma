@@ -71,6 +71,10 @@ dados, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/20
 quando você informa, localização e anexos.</li>
 <li><b>Denúncia anônima:</b> você pode denunciar sem se identificar. Nesse caso,
 não coletamos seu nome, CPF ou contato.</li>
+<li><b>E-mail de contato (opcional):</b> se você escolher não ficar anônimo numa
+denúncia, guardamos o e-mail informado só para retorno sobre aquela denúncia.</li>
+<li><b>No aparelho:</b> os números de protocolo das denúncias que você envia ou
+consulta ficam salvos só no seu celular, para você acompanhar.</li>
 <li><b>Dados de conta (opcional):</b> se você criar conta, coletamos nome, CPF e
 e-mail para autenticação e acompanhamento.</li>
 <li><b>Dados técnicos mínimos</b> necessários ao funcionamento e à segurança do app.</li>
@@ -132,7 +136,14 @@ footer{border-top:1px solid #e2e8f0;margin-top:40px;padding-top:20px;font-size:.
 <p>Esta página explica como excluir sua conta e seus dados no aplicativo
 <b>LUMI</b> (pacote <code>br.com.lumi.denuncia</code>), desenvolvido por Lucas Marques.</p>
 
-<h2>Como solicitar a exclusão</h2>
+<h2>Pelo aplicativo (imediato)</h2>
+<ol>
+<li>Abra a LUMI e entre na sua conta.</li>
+<li>Vá em <b>Perfil → Excluir conta</b>.</li>
+<li>Digite sua senha e confirme. A conta é apagada na hora.</li>
+</ol>
+
+<h2>Por e-mail (sem acesso ao app)</h2>
 <ol>
 <li>Envie um e-mail para <a href="mailto:lucasmarques1977@gmail.com">lucasmarques1977@gmail.com</a>.</li>
 <li>Assunto: <b>Exclusão de conta — LUMI</b>.</li>

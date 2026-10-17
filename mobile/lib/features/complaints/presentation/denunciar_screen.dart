@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/launcher.dart';
 import '../../../core/widgets/app_card.dart';
 import '../domain/complaint.dart';
 
@@ -108,6 +110,19 @@ class _EmergencyCard extends StatelessWidget {
             style: t.bodySmall?.copyWith(
               color: Colors.white.withValues(alpha: 0.8),
             ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (number, label) in AppConstants.emergencies)
+                ActionChip(
+                  avatar: const Icon(Icons.call_rounded, size: 18),
+                  label: Text('$number · $label'),
+                  onPressed: () => callNumber(context, number),
+                ),
+            ],
           ),
         ],
       ),

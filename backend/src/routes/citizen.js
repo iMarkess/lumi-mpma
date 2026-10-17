@@ -14,6 +14,17 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(6).max(72),
+});
+
+// Token de servidor (painel) não serve como sessão de cidadão.
+function currentCitizen(request) {
+  if (request.user?.kind !== 'citizen') return null;
+  return prisma.citizen.findUnique({ where: { id: request.user.sub } });
+}
+
 function publicUser(c) {
   return { id: c.id, name: c.name, cpf: c.cpf, email: c.email, avatarUrl: c.avatarUrl };
 }
@@ -111,8 +122,45 @@ export default async function citizenRoutes(app) {
 
   // Sessão atual
   app.get('/api/citizen/me', { onRequest: [app.authenticate] }, async (request, reply) => {
-    const citizen = await prisma.citizen.findUnique({ where: { id: request.user.sub } });
-    if (!citizen) return reply.code(404).send({ error: 'Conta não encontrada' });
+    const citizen = await currentCitizen(request);
+    if (!citizen) return reply.code(401).send({ error: 'Conta não encontrada' });
     return publicUser(citizen);
+  });
+
+  // Troca de senha (exige a senha atual)
+  app.post('/api/citizen/password', {
+    onRequest: [app.authenticate],
+    config: { rateLimit: { max: 6, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
+    const parsed = passwordSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'A nova senha precisa ter de 6 a 72 caracteres.' });
+    const citizen = await currentCitizen(request);
+    if (!citizen) return reply.code(401).send({ error: 'Conta não encontrada' });
+    if (!citizen.passwordHash || !(await bcrypt.compare(parsed.data.currentPassword, citizen.passwordHash))) {
+      return reply.code(403).send({ error: 'Senha atual incorreta.' });
+    }
+    await prisma.citizen.update({
+      where: { id: citizen.id },
+      data: { passwordHash: await bcrypt.hash(parsed.data.newPassword, 10) },
+    });
+    return { ok: true };
+  });
+
+  // Exclusão da conta pelo próprio app (exigência da Google Play).
+  // Denúncias não têm vínculo com a conta, então seguem anônimas para apuração.
+  app.post('/api/citizen/delete', {
+    onRequest: [app.authenticate],
+    config: { rateLimit: { max: 6, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
+    const citizen = await currentCitizen(request);
+    if (!citizen) return reply.code(401).send({ error: 'Conta não encontrada' });
+    if (citizen.passwordHash) {
+      const password = String(request.body?.password ?? '');
+      if (!(await bcrypt.compare(password, citizen.passwordHash))) {
+        return reply.code(403).send({ error: 'Senha incorreta.' });
+      }
+    }
+    await prisma.citizen.delete({ where: { id: citizen.id } });
+    return { ok: true };
   });
 }
