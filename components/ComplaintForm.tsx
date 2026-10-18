@@ -1,352 +1,486 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Send, AlertCircle, CheckCircle2, Mic, MicOff, Volume2, Globe } from 'lucide-react';
-import styles from './ComplaintForm.module.css';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import {
+  AlertCircle,
+  ArrowRight,
+  Check,
+  ChevronLeft,
+  Copy,
+  Lock,
+  Mic,
+  MicOff,
+  Send,
+  Volume2,
+} from 'lucide-react';
+import { api, apiEnabled } from '@/lib/api';
 import { useAppContext } from '@/context/AppContext';
+import styles from './ComplaintForm.module.css';
 
-// Type definitions for Web Speech API
+/* Tipagem mínima da Web Speech API (ditado por voz) — não vem no lib.dom. */
+interface Recognition {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start(): void;
+  stop(): void;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+}
+type RecognitionCtor = new () => Recognition;
+
 declare global {
   interface Window {
-    webkitSpeechRecognition: any;
-    SpeechRecognition: any;
+    webkitSpeechRecognition?: RecognitionCtor;
+    SpeechRecognition?: RecognitionCtor;
   }
 }
 
-interface Step {
+export interface Step {
   title: string;
   question: string;
-  type: 'text' | 'select' | 'textarea' | 'radio' | 'checkbox' | 'file';
+  help?: string;
+  type: 'text' | 'textarea' | 'radio' | 'emoji';
   options?: string[];
   field: string;
+  optional?: boolean;
 }
 
-interface ComplaintFormProps {
+interface Props {
   type: 'child' | 'elderly' | 'env';
+  categoryName: string;
   steps: Step[];
 }
 
-export default function ComplaintForm({ type, steps }: ComplaintFormProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<any>({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [protocol, setProtocol] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [isNarrating, setIsNarrating] = useState(false);
-  const [blockchainHash, setBlockchainHash] = useState('');
-  const recognitionRef = useRef<any>(null);
+const EMOJIS = [
+  ['😢', 'Triste'],
+  ['😨', 'Com medo'],
+  ['😡', 'Com raiva'],
+  ['😔', 'Preocupado'],
+  ['😕', 'Confuso'],
+  ['😐', 'Neutro'],
+  ['💪', 'Decidido'],
+  ['🤫', 'Prefiro não dizer'],
+] as const;
 
-  const generateBlockchainHash = () => {
-    const chars = '0123456789abcdef';
-    let hash = '0x';
-    for (let i = 0; i < 40; i++) {
-      hash += chars[Math.floor(Math.random() * 16)];
+/* Rótulos das respostas extras no texto que a equipe recebe. */
+const ANSWER_LABELS: Record<string, string> = {
+  victim_name: 'Pessoa envolvida',
+  victim_age: 'Idade aproximada',
+  victim_type: 'Perfil da pessoa',
+  is_urgent: 'Em risco agora',
+  emotions: 'Como o denunciante se sente',
+};
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const MIN_DESCRIPTION = 10; // mesma regra do servidor
+
+/* Protocolos enviados deste navegador (mesma ideia do app). */
+const STORAGE_KEY = 'lumi_protocols';
+function rememberProtocol(p: string) {
+  try {
+    const list: string[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([p, ...list.filter((x) => x !== p)].slice(0, 20)));
+  } catch {
+    /* modo privado: tudo bem não guardar */
+  }
+}
+
+export default function ComplaintForm({ type, categoryName, steps }: Props) {
+  const { addComplaint } = useAppContext();
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [anonymous, setAnonymous] = useState(true);
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
+  const [protocol, setProtocol] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const recognitionRef = useRef<Recognition | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Última etapa de todas as áreas: anônimo ou com contato.
+  const total = steps.length + 1;
+  const isIdentify = index === steps.length;
+  const step = steps[index];
+  const value = step ? (answers[step.field] ?? '') : '';
+
+  useEffect(() => () => recognitionRef.current?.stop(), []);
+
+  // Leitor de tela: foca a nova pergunta a cada troca de etapa (não ao abrir).
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
     }
-    return hash;
+    headingRef.current?.focus();
+  }, [index]);
+
+  const set = (field: string, v: string) => {
+    setError('');
+    setAnswers((a) => ({ ...a, [field]: v }));
   };
 
-  const toggleRecognition = (field: string) => {
-    if (isRecording && recognitionRef.current) {
-      recognitionRef.current.stop();
+  const validate = (): string => {
+    if (isIdentify) {
+      return anonymous || EMAIL_RE.test(email.trim())
+        ? ''
+        : 'Informe um e-mail válido ou escolha ficar anônimo.';
+    }
+    const v = value.trim();
+    if (step.type === 'textarea' && v.length < MIN_DESCRIPTION) {
+      return `Conte um pouco mais (pelo menos ${MIN_DESCRIPTION} letras).`;
+    }
+    if (!step.optional && !v) {
+      return step.type === 'text' ? 'Preencha para continuar.' : 'Escolha uma opção para continuar.';
+    }
+    return '';
+  };
+
+  const next = () => {
+    const problem = validate();
+    if (problem) {
+      setError(problem);
       return;
     }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Seu navegador não suporta reconhecimento de voz.');
-      return;
+    if (isIdentify) {
+      submit();
+    } else {
+      setIndex((i) => i + 1);
     }
+  };
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'pt-BR';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+  const back = () => {
+    setError('');
+    setIndex((i) => Math.max(0, i - 1));
+  };
 
-    recognition.onstart = () => {
-      setIsRecording(true);
-    };
+  const composeDescription = () => {
+    const extra = Object.entries(ANSWER_LABELS)
+      .filter(([k]) => (answers[k] ?? '').trim())
+      .map(([k, label]) => `${label}: ${answers[k].trim()}`);
+    const text = [
+      (answers.description ?? '').trim(),
+      extra.length ? `\n— Informações do formulário —\n${extra.join('\n')}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+    return text.slice(0, 4000);
+  };
 
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: prev[field] ? `${prev[field]} ${transcript}` : transcript
-      }));
-    };
-
-    recognition.onerror = (event: any) => {
-      // "aborted" is usually intentional when we call .stop()
-      if (event.error !== 'aborted') {
-        console.error('Speech recognition error:', event.error);
+  const submit = async () => {
+    setSending(true);
+    setError('');
+    const victim = (answers.victim_name ?? '').trim();
+    const title = (victim ? `Denúncia: ${victim}` : `Denúncia — ${categoryName}`).slice(0, 150);
+    const priority = answers.is_urgent === 'Sim' ? 'alta' : 'media';
+    try {
+      let p: string;
+      if (apiEnabled) {
+        const res = await api.submitComplaint({
+          category: type,
+          title,
+          description: composeDescription(),
+          location: (answers.location ?? '').trim(),
+          priority,
+          anonymous,
+          contactEmail: anonymous ? null : email.trim(),
+        });
+        p = res.protocol;
+      } else {
+        p = await addComplaint({
+          category: type,
+          title,
+          description: composeDescription(),
+          location: answers.location || 'Não informado',
+          priority,
+        });
       }
-      setIsRecording(false);
-    };
+      rememberProtocol(p);
+      setProtocol(p);
+      window.scrollTo({ top: 0 });
+    } catch (e) {
+      setError(
+        (e as Error).message && !/^Erro \d+$/.test((e as Error).message)
+          ? (e as Error).message
+          : 'Não foi possível enviar. Verifique sua conexão e tente de novo — suas respostas continuam aqui.',
+      );
+    } finally {
+      setSending(false);
+    }
+  };
 
-    recognition.onend = () => {
-      setIsRecording(false);
+  const toggleDictation = (field: string) => {
+    if (recording) {
+      recognitionRef.current?.stop();
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      setError('Seu navegador não permite ditar por voz. Digite o texto, por favor.');
+      return;
+    }
+    const r = new SR();
+    r.lang = 'pt-BR';
+    r.continuous = false;
+    r.interimResults = false;
+    r.onstart = () => setRecording(true);
+    r.onresult = (ev) => {
+      const t = ev.results[0][0].transcript;
+      setAnswers((a) => ({ ...a, [field]: a[field] ? `${a[field]} ${t}` : t }));
+    };
+    r.onend = () => {
+      setRecording(false);
       recognitionRef.current = null;
     };
-
-    recognitionRef.current = recognition;
-    recognition.start();
+    r.onerror = () => setRecording(false);
+    recognitionRef.current = r;
+    r.start();
   };
 
-  const narrateQuestion = (text: string) => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR';
-      
-      // Try to find a female voice
-      const voices = window.speechSynthesis.getVoices();
-      const femaleVoice = voices.find(v => 
-        (v.lang.includes('pt-BR')) && 
-        (v.name.toLowerCase().includes('maria') || v.name.toLowerCase().includes('luciana') || v.name.toLowerCase().includes('victoria') || v.name.toLowerCase().includes('female'))
-      );
-      
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
-      }
-      
-      utterance.pitch = 1.3; // Higher pitch for child-like feel
-      utterance.rate = 1.0;
-      
-      utterance.onstart = () => setIsNarrating(true);
-      utterance.onend = () => setIsNarrating(false);
-      window.speechSynthesis.speak(utterance);
-    }
+  const speak = (text: string) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pt-BR';
+    window.speechSynthesis.speak(u);
   };
 
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, []);
-
-  const progress = ((currentStep + 1) / steps.length) * 100;
-
-  const { addComplaint } = useAppContext();
-
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      handleSubmit();
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    setBlockchainHash(generateBlockchainHash());
-    // Envia ao backend (ou local) e usa o protocolo retornado.
-    const newProtocol = await addComplaint({
-      category: type,
-      title: formData.victim_name ? `Denúncia: ${formData.victim_name}` : `Denúncia ${type}`,
-      location: formData.location || 'Não informado',
-      description: formData.description || '',
-      priority: formData.is_urgent === 'Sim' ? 'alta' : 'media',
-      victim_name: formData.victim_name
-    });
-    setProtocol(newProtocol);
-    setIsSubmitted(true);
-  };
-
-  if (isSubmitted) {
+  /* ===================== SUCESSO ===================== */
+  if (protocol) {
     return (
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className={styles.successCard}
-      >
-        <CheckCircle2 size={80} color="var(--success)" />
-        <h2>Denúncia enviada com sucesso!</h2>
-        <p>Sua denúncia foi registrada e está em fase de triagem inicial.</p>
-        <div className={styles.protocolBox}>
-          <span>Seu número de protocolo é:</span>
-          <strong>{protocol}</strong>
-          <div className={styles.blockchainHash}>
-            <span style={{ color: 'rgba(255,255,255,0.5)', display: 'block', paddingBottom: 4 }}>ID de Criptografia Blockchain:</span>
-            {blockchainHash}
-          </div>
+      <section className={styles.card} aria-labelledby="sucesso-titulo">
+        <div className={styles.successIcon} aria-hidden="true">
+          <Check size={34} strokeWidth={2.6} />
         </div>
-        <p className={styles.warning}>
-          Guarde este número para acompanhar o status da sua denúncia posteriormente.
+        <h2 id="sucesso-titulo" className={styles.successTitle}>
+          Denúncia registrada
+        </h2>
+        <p className={styles.successText}>
+          Obrigado por agir. Guarde o número abaixo: é com ele que você acompanha o caso.
+          {anonymous && ' Como a denúncia é anônima, não há outra forma de recuperá-lo.'}
         </p>
-        <button onClick={() => window.location.href = '/'} className={styles.btnHome}>
-          Voltar ao Início
-        </button>
-      </motion.div>
+
+        <div className={styles.protocol}>
+          <span className={styles.protocolLabel}>Seu protocolo</span>
+          <strong className={styles.protocolValue}>{protocol}</strong>
+          <button
+            type="button"
+            className={styles.copy}
+            onClick={() => {
+              navigator.clipboard?.writeText(protocol);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+          >
+            {copied ? <Check size={16} /> : <Copy size={16} />}
+            {copied ? 'Copiado' : 'Copiar'}
+          </button>
+        </div>
+
+        <div className={styles.successActions}>
+          <Link href={`/acompanhar?p=${encodeURIComponent(protocol)}`} className={styles.primary}>
+            Acompanhar agora <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+          <Link href="/" className={styles.secondary}>
+            Voltar ao início
+          </Link>
+        </div>
+      </section>
     );
   }
 
-  const step = steps[currentStep];
+  /* ===================== ETAPAS ===================== */
+  const progress = Math.round(((index + 1) / total) * 100);
+  const title = isIdentify ? 'Identificação' : step.title;
+  const question = isIdentify ? 'Quer receber retorno ou prefere ficar anônimo?' : step.question;
 
   return (
-    <div className={styles.formContainer}>
-      <div className={styles.progressHeader}>
-        <div className={styles.progressInfo}>
-          <span>Etapa {currentStep + 1} de {steps.length}</span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <div className={styles.progressBar}>
-          <motion.div 
-            className={styles.progressFill}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-          />
-        </div>
+    <section className={styles.card} aria-label={`Etapa ${index + 1} de ${total}`}>
+      <div className={styles.progressInfo}>
+        <span>
+          Etapa {index + 1} de {total}
+        </span>
+        <span>{progress}%</span>
+      </div>
+      <div
+        className={styles.progress}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress}
+        aria-label="Progresso da denúncia"
+      >
+        <span style={{ width: `${progress}%` }} />
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3 }}
-          className={styles.stepContent}
-        >
-          <span className={styles.stepTitle}>
-            {step.title}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 15, marginBottom: 5 }}>
-            <h2 className={styles.question} style={{ marginBottom: 0 }}>{step.question}</h2>
-            <button 
-              className={styles.btnNarrate}
-              onClick={() => narrateQuestion(step.question)}
-              title="Ouvir pergunta"
-            >
-              <Volume2 size={16} /> {isNarrating ? 'Ouvindo...' : 'Ouvir'}
-            </button>
-          </div>
+      <div key={index} className={styles.stepBody}>
+        <p className={styles.stepTitle}>{title}</p>
+        <div className={styles.questionRow}>
+          <h2 ref={headingRef} tabIndex={-1} className={styles.question}>
+            {question}
+          </h2>
+          <button type="button" className={styles.listen} onClick={() => speak(question)} aria-label="Ouvir a pergunta">
+            <Volume2 size={18} aria-hidden="true" />
+            Ouvir
+          </button>
+        </div>
+        {!isIdentify && step.help && <p className={styles.help}>{step.help}</p>}
 
-          <div className={styles.fieldWrapper}>
-            {step.type === 'text' && (
-              <div className={styles.inputWithAction}>
-                <input 
-                  type="text" 
+        <div className={styles.field}>
+          {!isIdentify && (step.type === 'text' || step.type === 'textarea') && (
+            <div className={styles.inputWrap}>
+              {step.type === 'text' ? (
+                <input
                   className={styles.input}
-                  value={formData[step.field] || ''}
-                  onChange={(e) => setFormData({...formData, [step.field]: e.target.value})}
-                  placeholder="Digite aqui..."
+                  value={value}
+                  onChange={(e) => set(step.field, e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && next()}
+                  placeholder={step.optional ? 'Opcional' : 'Digite aqui'}
+                  aria-label={question}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? 'form-erro' : undefined}
                 />
-                <button 
-                  type="button"
-                  className={`${styles.btnVoice} ${isRecording ? styles.recording : ''}`}
-                  onClick={() => toggleRecognition(step.field)}
-                  title="Falar ao invés de digitar"
-                >
-                  {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
-                </button>
-                {isRecording && (
-                  <div className={styles.waveform}>
-                    <div className={styles.bar}></div>
-                    <div className={styles.bar}></div>
-                    <div className={styles.bar}></div>
-                    <div className={styles.bar}></div>
-                    <div className={styles.bar}></div>
-                  </div>
-                )}
-              </div>
-            )}
-            {step.type === 'textarea' && (
-              <div className={styles.inputWithAction}>
-                <textarea 
+              ) : (
+                <textarea
                   className={styles.textarea}
-                  value={formData[step.field] || ''}
-                  onChange={(e) => setFormData({...formData, [step.field]: e.target.value})}
-                  placeholder="Descreva detalhadamente..."
+                  value={value}
+                  onChange={(e) => set(step.field, e.target.value)}
+                  placeholder="Escreva aqui com suas palavras"
+                  maxLength={3500}
+                  aria-label={question}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? 'form-erro' : undefined}
                 />
-                <button 
+              )}
+              <button
+                type="button"
+                className={`${styles.mic} ${recording ? styles.micOn : ''}`}
+                onClick={() => toggleDictation(step.field)}
+                aria-label={recording ? 'Parar de ditar' : 'Ditar por voz'}
+                aria-pressed={recording}
+              >
+                {recording ? <MicOff size={20} /> : <Mic size={20} />}
+              </button>
+              {step.type === 'textarea' && (
+                <span className={styles.counter}>{value.length}/3500</span>
+              )}
+            </div>
+          )}
+
+          {!isIdentify && step.type === 'radio' && (
+            <div className={styles.options} role="radiogroup" aria-label={question}>
+              {step.options?.map((o) => (
+                <button
+                  key={o}
                   type="button"
-                  className={`${styles.btnVoice} ${isRecording ? styles.recording : ''}`}
-                  onClick={() => toggleRecognition(step.field)}
-                  title="Falar ao invés de digitar"
+                  role="radio"
+                  aria-checked={value === o}
+                  className={styles.option}
+                  onClick={() => set(step.field, o)}
                 >
-                  {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+                  <span className={styles.radio} aria-hidden="true" />
+                  {o}
                 </button>
-                {isRecording && (
-                  <div className={styles.waveform}>
-                    <div className={styles.bar}></div>
-                    <div className={styles.bar}></div>
-                    <div className={styles.bar}></div>
-                    <div className={styles.bar}></div>
-                    <div className={styles.bar}></div>
-                  </div>
-                )}
-              </div>
-            )}
-            {step.type === 'radio' && step.field === 'emotions' && (
-              <div className={styles.emojiGrid}>
-                {['😊', '😢', '😡', '😨', '😕', '😐', '😔', '😱', '🤫', '💪'].map(emoji => (
-                  <button 
-                    key={emoji}
-                    className={`${styles.emojiBtn} ${formData[step.field] === emoji ? styles.active : ''}`}
-                    onClick={() => setFormData({...formData, [step.field]: emoji})}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            )}
-            {step.type === 'radio' && step.field !== 'emotions' && (
-              <div className={styles.radioGroup}>
-                {step.options?.map(option => (
-                  <button 
-                    key={option}
-                    type="button"
-                    className={`${styles.radioOption} ${formData[step.field] === option ? styles.active : ''}`}
-                    onClick={() => setFormData({...formData, [step.field]: option})}
-                  >
-                    <span className={styles.radioDot}></span>
-                    {option}
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            {/* AI Scanner Animation for File uploads or detailed descriptions */}
-            {(step.field === 'description' || step.field === 'evidence') && (
-              <div className={styles.scannerContainer}>
-                <div className={styles.laser}></div>
-                <div style={{ padding: '10px', fontSize: '0.8rem', color: 'var(--accent)', textAlign: 'center' }}>
-                  SISTEMA DE ANÁLISE SENTINELA-AI [SCANNING...]
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      </AnimatePresence>
+              ))}
+            </div>
+          )}
+
+          {!isIdentify && step.type === 'emoji' && (
+            <div className={styles.emojis} role="radiogroup" aria-label={question}>
+              {EMOJIS.map(([e, label]) => (
+                <button
+                  key={e}
+                  type="button"
+                  role="radio"
+                  aria-checked={value === label}
+                  className={styles.emoji}
+                  onClick={() => set(step.field, label)}
+                >
+                  <span aria-hidden="true">{e}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {isIdentify && (
+            <div className={styles.identify}>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={anonymous}
+                className={styles.toggle}
+                onClick={() => {
+                  setError('');
+                  setAnonymous((a) => !a);
+                }}
+              >
+                <span className={styles.toggleTrack} aria-hidden="true">
+                  <span className={styles.toggleThumb} />
+                </span>
+                <span>
+                  <strong>Denúncia anônima</strong>
+                  <small>Nenhum dado seu é enviado junto com o relato.</small>
+                </span>
+              </button>
+              {!anonymous && (
+                <label className={styles.emailLabel}>
+                  E-mail para contato
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    className={styles.input}
+                    value={email}
+                    onChange={(e) => {
+                      setError('');
+                      setEmail(e.target.value);
+                    }}
+                    placeholder="voce@exemplo.com"
+                    aria-invalid={!!error}
+                  />
+                  <small>Usado só pela equipe para falar sobre esta denúncia.</small>
+                </label>
+              )}
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <p id="form-erro" className={styles.error} role="alert">
+            <AlertCircle size={16} aria-hidden="true" /> {error}
+          </p>
+        )}
+      </div>
 
       <div className={styles.footer}>
-        <button 
-          onClick={handleBack} 
-          className={styles.btnBack}
-          disabled={currentStep === 0}
-        >
-          <ChevronLeft /> Voltar
+        <button type="button" className={styles.back} onClick={back} disabled={index === 0 || sending}>
+          <ChevronLeft size={18} aria-hidden="true" /> Voltar
         </button>
-        <button 
-          onClick={handleNext} 
-          className={styles.btnNext}
-        >
-          {currentStep === steps.length - 1 ? 'Enviar Denúncia' : 'Próximo'} 
-          {currentStep === steps.length - 1 ? <Send size={18} /> : <ChevronRight />}
+        <button type="button" className={styles.next} onClick={next} disabled={sending}>
+          {sending ? (
+            <span className={styles.spinner} aria-label="Enviando" />
+          ) : isIdentify ? (
+            <>
+              Enviar denúncia <Send size={18} aria-hidden="true" />
+            </>
+          ) : (
+            <>
+              Próximo <ArrowRight size={18} aria-hidden="true" />
+            </>
+          )}
         </button>
       </div>
 
-      <div className={styles.securityNote}>
-        <AlertCircle size={16} />
-        <span>Sua denúncia é criptografada e o anonimato é garantido por lei.</span>
-      </div>
-    </div>
+      <p className={styles.note}>
+        <Lock size={14} aria-hidden="true" /> Conexão criptografada. Em perigo agora? Ligue{' '}
+        <a href="tel:190">190</a>.
+      </p>
+    </section>
   );
 }

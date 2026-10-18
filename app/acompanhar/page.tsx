@@ -1,135 +1,255 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Calendar, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight, Check, Clock, Copy, MapPin, Search, X } from 'lucide-react';
 import Navbar from '@/components/Navbar';
-import styles from './Acompanhar.module.css';
+import Footer from '@/components/Footer';
+import { api, apiEnabled, type ApiComplaint, type Status } from '@/lib/api';
 import { useAppContext } from '@/context/AppContext';
+import styles from './Acompanhar.module.css';
 
 const CATEGORY_LABEL: Record<string, string> = {
-  child: 'Criança e Adolescente',
-  elderly: 'Idosos e Vulneráveis',
-  env: 'Meio Ambiente',
+  child: 'Criança e adolescente',
+  elderly: 'Idosos e pessoas com deficiência',
+  env: 'Meio ambiente',
 };
-const STATUS_LABEL: Record<string, string> = {
-  recebida: 'Recebida', em_triagem: 'Em Triagem', em_analise: 'Em Análise',
-  'concluída': 'Concluída', rejeitada: 'Rejeitada',
+
+const STATUS_LABEL: Record<Status, string> = {
+  recebida: 'Recebida',
+  em_triagem: 'Em triagem',
+  em_analise: 'Em análise',
+  concluida: 'Concluída',
+  rejeitada: 'Encerrada sem andamento',
 };
-const STEPS = ['Denúncia Recebida', 'Triagem Inicial', 'Em Análise', 'Concluída'];
-const STEP_INDEX: Record<string, number> = {
-  recebida: 0, em_triagem: 1, em_analise: 2, 'concluída': 3, rejeitada: 3,
+
+const STATUS_HINT: Record<Status, string> = {
+  recebida: 'A denúncia chegou e está na fila para a primeira leitura.',
+  em_triagem: 'A equipe está conferindo as informações e a área responsável.',
+  em_analise: 'O caso está sendo analisado e encaminhado.',
+  concluida: 'A análise foi concluída.',
+  rejeitada: 'A equipe encerrou o caso. Veja a observação abaixo, se houver.',
 };
+
+const FLOW: Status[] = ['recebida', 'em_triagem', 'em_analise', 'concluida'];
+
+const fmt = (iso: string) =>
+  new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+type State =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'notFound'; protocol: string }
+  | { kind: 'error' }
+  | { kind: 'found'; c: ApiComplaint };
 
 export default function AcompanharPage() {
   const { trackComplaint } = useAppContext();
   const [protocol, setProtocol] = useState('');
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [state, setState] = useState<State>({ kind: 'idle' });
+  const [copied, setCopied] = useState(false);
 
-  const handleSearch = async () => {
-    const q = protocol.trim();
+  const search = useCallback(
+    async (raw: string) => {
+      const q = raw.trim().toUpperCase();
+      if (!q) return;
+      setProtocol(q);
+      setState({ kind: 'loading' });
+      try {
+        if (apiEnabled) {
+          setState({ kind: 'found', c: await api.trackComplaint(q) });
+          return;
+        }
+        // Modo local (build sem API): só o essencial do contexto.
+        const local = await trackComplaint(q);
+        if (!local) throw Object.assign(new Error('404'), { status: 404 });
+        setState({
+          kind: 'found',
+          c: {
+            id: local.id,
+            category: local.category,
+            title: local.title,
+            location: local.location,
+            description: local.description,
+            status: (local.status === 'concluída' ? 'concluida' : local.status) as Status,
+            priority: local.priority,
+            anonymous: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        });
+      } catch (e) {
+        const status = (e as { status?: number }).status;
+        const notFound = status === 404 || /404|não encontrado/i.test(String((e as Error).message));
+        setState(notFound ? { kind: 'notFound', protocol: q } : { kind: 'error' });
+      }
+    },
+    [trackComplaint],
+  );
+
+  // /acompanhar?p=LUMI-XXXXXX (vindo da home ou do app) já abre consultado.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('p');
+    if (p) search(p);
+  }, [search]);
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = protocol.trim().toUpperCase();
     if (!q) return;
-    setLoading(true);
-    setError('');
-    const c = await trackComplaint(q);
-    setLoading(false);
-    if (!c) {
-      setResult(null);
-      setError('Protocolo não encontrado. Verifique o número e tente novamente.');
-      return;
-    }
-    const idx = STEP_INDEX[c.status] ?? 0;
-    setResult({
-      protocol: c.id,
-      status: STATUS_LABEL[c.status] || c.status,
-      date: c.date,
-      category: CATEGORY_LABEL[c.category] || c.category,
-      timeline: STEPS.map((s, i) => ({
-        status: s,
-        date: i <= idx ? 'Concluído' : 'Pendente',
-        completed: i <= idx,
-      })),
-    });
+    window.history.replaceState(null, '', `/acompanhar?p=${encodeURIComponent(q)}`);
+    search(q);
   };
 
   return (
-    <main className={styles.main}>
+    <div className={styles.page}>
       <Navbar />
-      <div className={`${styles.content} container section-padding`}>
-        <div className={styles.searchSection}>
-          <div className={styles.badge}>
-            <ShieldCheck size={16} /> Acompanhamento de Protocolo
-          </div>
-          <h1>Acompanhe o status da sua denúncia</h1>
-          <p>Informe o número do protocolo gerado no momento do envio para verificar o andamento.</p>
-          
-          <div className={styles.searchBar}>
-            <input 
-              type="text" 
-              placeholder="Ex: LUMI-XXXXXX" 
+      <main id="conteudo" className={styles.main}>
+        <div className={`${styles.content} container`}>
+          <header className={styles.head}>
+            <p className={styles.eyebrow}>Consultar protocolo</p>
+            <h1 className={styles.title}>Acompanhe sua denúncia</h1>
+            <p className={styles.lead}>
+              Digite o número recebido no envio. Só quem tem o protocolo consegue ver o caso.
+            </p>
+          </header>
+
+          <form className={styles.search} onSubmit={onSubmit}>
+            <Search size={20} aria-hidden="true" className={styles.searchIcon} />
+            <label htmlFor="protocolo" className="sr-only">
+              Número do protocolo
+            </label>
+            <input
+              id="protocolo"
               value={protocol}
               onChange={(e) => setProtocol(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="LUMI-XXXXXX"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              className={styles.input}
             />
-            <button onClick={handleSearch} disabled={loading}><Search size={20} /> {loading ? 'Buscando...' : 'Buscar'}</button>
+            <button type="submit" className={styles.button} disabled={state.kind === 'loading'}>
+              {state.kind === 'loading' ? <span className={styles.spinner} aria-hidden="true" /> : 'Consultar'}
+            </button>
+          </form>
+
+          <div aria-live="polite">
+            {state.kind === 'notFound' && (
+              <div className={styles.notice}>
+                <h2>Protocolo não encontrado</h2>
+                <p>
+                  Confira se digitou <strong>{state.protocol}</strong> exatamente como recebeu,
+                  incluindo o “LUMI-”.
+                </p>
+              </div>
+            )}
+
+            {state.kind === 'error' && (
+              <div className={styles.notice}>
+                <h2>Não foi possível consultar agora</h2>
+                <p>Verifique sua conexão e tente de novo em alguns instantes.</p>
+              </div>
+            )}
+
+            {state.kind === 'found' && (
+              <Result
+                c={state.c}
+                copied={copied}
+                onCopy={() => {
+                  navigator.clipboard?.writeText(state.c.id);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+              />
+            )}
+
+            {state.kind === 'idle' && (
+              <p className={styles.hint}>
+                Ainda não denunciou?{' '}
+                <Link href="/#denunciar" className={styles.hintLink}>
+                  Fazer uma denúncia <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+              </p>
+            )}
           </div>
-          {error && <p className={styles.error}>{error}</p>}
         </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
 
-        <AnimatePresence>
-          {result && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={styles.resultCard}
-            >
-              <div className={styles.resultHeader}>
-                <div className={styles.resInfo}>
-                  <span className={styles.resLabel}>Protocolo</span>
-                  <span className={styles.resVal}>{result.protocol}</span>
-                </div>
-                <div className={styles.resStatus}>
-                  <span className={styles.statusBadge}>{result.status}</span>
-                </div>
-              </div>
+function Result({ c, copied, onCopy }: { c: ApiComplaint; copied: boolean; onCopy: () => void }) {
+  const rejected = c.status === 'rejeitada';
+  const steps: Status[] = rejected ? ['recebida', 'em_triagem', 'em_analise', 'rejeitada'] : FLOW;
+  const current = steps.indexOf(c.status);
+  // Último registro de cada status: data e observação da equipe.
+  const byStatus = new Map((c.events ?? []).map((e) => [e.toStatus, e]));
 
-              <div className={styles.resGrid}>
-                <div className={styles.resItem}>
-                  <Calendar size={18} />
-                  <div>
-                    <span>Data de Abertura</span>
-                    <strong>{result.date}</strong>
-                  </div>
-                </div>
-                <div className={styles.resItem}>
-                  <ShieldCheck size={18} />
-                  <div>
-                    <span>Categoria</span>
-                    <strong>{result.category}</strong>
-                  </div>
-                </div>
-              </div>
+  return (
+    <article className={styles.result}>
+      <header className={styles.resultHead}>
+        <div>
+          <p className={styles.resultLabel}>Protocolo</p>
+          <div className={styles.resultIdRow}>
+            <h2 className={styles.resultId}>{c.id}</h2>
+            <button type="button" onClick={onCopy} className={styles.copy} aria-label="Copiar protocolo">
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+            </button>
+          </div>
+        </div>
+        <span className={styles.status} data-status={c.status}>
+          {STATUS_LABEL[c.status]}
+        </span>
+      </header>
 
-              <div className={styles.timeline}>
-                <h3>Evolução do Caso</h3>
-                {result.timeline.map((item: any, idx: number) => (
-                  <div key={idx} className={`${styles.timelineItem} ${item.completed ? styles.completed : ''}`}>
-                    <div className={styles.dot}>
-                      {item.completed ? <CheckCircle2 size={16} /> : <div className={styles.innerDot} />}
-                    </div>
-                    <div className={styles.timeContent}>
-                      <strong>{item.status}</strong>
-                      <span>{item.date}</span>
-                    </div>
-                  </div>
-                ))}
+      <p className={styles.statusHint}>{STATUS_HINT[c.status]}</p>
+
+      <dl className={styles.meta}>
+        <div>
+          <dt>Área</dt>
+          <dd>{CATEGORY_LABEL[c.category] ?? c.category}</dd>
+        </div>
+        <div>
+          <dt>
+            <Clock size={14} aria-hidden="true" /> Enviada em
+          </dt>
+          <dd>{fmt(c.createdAt)}</dd>
+        </div>
+        <div>
+          <dt>
+            <MapPin size={14} aria-hidden="true" /> Local
+          </dt>
+          <dd>{c.location || 'Não informado'}</dd>
+        </div>
+      </dl>
+
+      <h3 className={styles.timelineTitle}>Andamento</h3>
+      <ol className={styles.timeline}>
+        {steps.map((s, i) => {
+          const done = i <= current;
+          const ev = byStatus.get(s);
+          return (
+            <li key={s} className={styles.step} data-done={done} data-current={i === current} data-line={i < current}>
+              <span className={styles.dot} aria-hidden="true">
+                {done && (s === 'rejeitada' ? <X size={14} /> : <Check size={14} />)}
+              </span>
+              <div>
+                <p className={styles.stepName}>{STATUS_LABEL[s]}</p>
+                {ev && <p className={styles.stepDate}>{fmt(ev.createdAt)}</p>}
+                {ev?.note && <p className={styles.stepNote}>{ev.note}</p>}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </main>
+            </li>
+          );
+        })}
+      </ol>
+    </article>
   );
 }

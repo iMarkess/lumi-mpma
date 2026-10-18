@@ -1,17 +1,8 @@
-'use client';
-
-import { motion } from 'framer-motion';
-
+/*
+  Transição de entrada só em CSS. A versão com framer-motion renderizava o
+  conteúdo com opacity: 0 no HTML do servidor e dependia do JS para aparecer:
+  em celular lento (ou se um script falhasse) a página ficava em branco.
+*/
 export default function Template({ children }: { children: React.ReactNode }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-      style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <div className="page-enter">{children}</div>;
 }

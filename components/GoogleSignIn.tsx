@@ -4,6 +4,9 @@ import { useEffect, useRef } from 'react';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
+/** Sem Client ID no build o botão some (antes mostrava um aviso de dev ao público). */
+export const googleEnabled = CLIENT_ID !== '';
+
 interface Props {
   onCredential: (credential: string) => void;
   /** Mostra o One Tap (seletor de contas aparece sozinho ao abrir a tela). */
@@ -68,29 +71,7 @@ export default function GoogleSignIn({ onCredential, oneTap = true }: Props) {
     document.head.appendChild(script);
   }, [onCredential, oneTap]);
 
-  if (!CLIENT_ID) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          height: 52,
-          borderRadius: 999,
-          border: '1px dashed var(--border-strong)',
-          color: 'var(--text-muted)',
-          fontSize: '0.82rem',
-          fontWeight: 600,
-          textAlign: 'center',
-          padding: '0 12px',
-        }}
-        title="Defina NEXT_PUBLIC_GOOGLE_CLIENT_ID para ativar"
-      >
-        Login Google — configure o Client ID (ver GOOGLE-LOGIN.md)
-      </div>
-    );
-  }
+  if (!CLIENT_ID) return null;
 
   return <div ref={ref} style={{ display: 'flex', justifyContent: 'center' }} />;
 }

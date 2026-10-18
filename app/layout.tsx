@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lexend } from "next/font/google";
+import { Lexend, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import { CitizenAuthProvider } from "@/context/CitizenAuth";
@@ -8,10 +8,12 @@ import BottomNav from "@/components/BottomNav";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import InstallPrompt from "@/components/InstallPrompt";
 
-const inter = Inter({
+// Source Sans 3: desenhada para leitura longa em tela, com acentos do
+// português bem resolvidos. Lexend fica só nos títulos.
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
+  variable: "--font-source",
   display: "swap",
 });
 
@@ -75,7 +77,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#00458E" },
+    { media: "(prefers-color-scheme: light)", color: "#F7F5F0" },
     { media: "(prefers-color-scheme: dark)", color: "#002D5C" },
   ],
   width: "device-width",
@@ -91,8 +93,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${inter.variable} ${lexend.variable} ${inter.className}`} suppressHydrationWarning>
+    // As variáveis de fonte ficam no <html>: os tokens --font-display/--font-body
+    // são resolvidos no :root, e lá uma variável definida só no <body> não existe.
+    <html lang="pt-BR" className={`${sourceSans.variable} ${lexend.variable}`} suppressHydrationWarning>
+      <body className={sourceSans.className} suppressHydrationWarning>
         <AppProvider>
           <CitizenAuthProvider>
           {children}

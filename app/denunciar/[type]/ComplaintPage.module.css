@@ -1,25 +1,46 @@
 .main {
-  min-height: 100vh;
-  background: var(--surface);
+  min-height: 100dvh;
+  background: var(--bg);
 }
 
+/* Navbar sticky ocupa espaço no fluxo: não precisa compensar. */
 .content {
-  padding-top: 140px;
+  max-width: 760px;
+  padding-block: clamp(32px, 6vw, 64px) clamp(56px, 8vw, 96px);
 }
 
 .header {
-  text-align: center;
-  margin-bottom: 50px;
+  margin-bottom: var(--space-8);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--primary-dark);
+}
+
+.eyebrow::before {
+  content: '';
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
 }
 
 .header h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-bottom: 12px;
-  color: var(--text);
+  margin-top: var(--space-3);
+  font-size: clamp(2rem, 1.4rem + 2.6vw, 3rem);
+  font-weight: 700;
+  color: var(--navy-900);
 }
 
-.header p {
-  color: var(--text-muted);
-  font-size: 1.1rem;
+.header p:last-child {
+  margin-top: var(--space-3);
+  font-size: 1.125rem;
+  color: var(--text-soft);
 }

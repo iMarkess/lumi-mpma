@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, ShieldAlert, Search, Info, X, Baby, HeartPulse, Leaf } from 'lucide-react';
+import { Home, Plus, Search, HelpCircle, Lock, X, Baby, HeartPulse, Leaf } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -52,8 +52,8 @@ export default function BottomNav() {
       <nav className="bottom-nav">
         {/* Home */}
         <button
-          className={`nav-item ${(pathname === '/app' || pathname === '/') && !isSheetOpen ? 'active' : ''}`}
-          onClick={() => router.push('/app')}
+          className={`nav-item ${pathname === '/' && !isSheetOpen ? 'active' : ''}`}
+          onClick={() => router.push('/')}
         >
           <div className="nav-icon"><Home size={22} /></div>
           <span className="nav-label">Início</span>
@@ -65,7 +65,7 @@ export default function BottomNav() {
           onClick={() => router.push('/acompanhar')}
         >
           <div className="nav-icon"><Search size={22} /></div>
-          <span className="nav-label">Protocolo</span>
+          <span className="nav-label">Consultar</span>
         </button>
 
         {/* Ação central (Denunciar) — <button> e não <div>: precisa receber
@@ -79,17 +79,26 @@ export default function BottomNav() {
           aria-label="Iniciar nova denúncia"
         >
           <div className="center-btn-inner">
-            <ShieldAlert size={26} aria-hidden="true" />
+            <Plus size={26} strokeWidth={2.6} aria-hidden="true" />
           </div>
+          <span className="nav-label nav-label-center">Denunciar</span>
         </button>
 
-        {/* Help */}
-        <button 
-          className={`nav-item ${pathname === '/#orientacoes' && !isSheetOpen ? 'active' : ''}`}
-          onClick={() => handleNavItemClick('/#orientacoes')}
+        {/* Cinco posições: com quatro, o botão central ficava fora de eixo. */}
+        <button
+          className="nav-item"
+          onClick={() => handleNavItemClick('/#sigilo')}
         >
-          <div className="nav-icon"><Info size={22} /></div>
-          <span className="nav-label">Ajuda</span>
+          <div className="nav-icon"><Lock size={22} /></div>
+          <span className="nav-label">Sigilo</span>
+        </button>
+
+        <button
+          className="nav-item"
+          onClick={() => handleNavItemClick('/#duvidas')}
+        >
+          <div className="nav-icon"><HelpCircle size={22} /></div>
+          <span className="nav-label">Dúvidas</span>
         </button>
       </nav>
 

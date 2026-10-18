@@ -1,37 +1,34 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, Info, Lock, ArrowRight, Sparkle } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
 import styles from './Navbar.module.css';
 
-// `route` é a rota que marca o item como página atual. Links de âncora não
-// têm rota própria, então ficam sem `route` e nunca recebem aria-current.
+// `route` marca o item como página atual. Âncoras da home não têm rota
+// própria, então nunca recebem aria-current.
 const LINKS = [
-  { href: '/', label: 'Início', icon: Home, route: '/' },
-  { href: '/acompanhar', label: 'Protocolo', icon: Search, route: '/acompanhar' },
-  { href: '/#orientacoes', label: 'Orientações', icon: Info },
+  { href: '/#como-funciona', label: 'Como funciona' },
+  { href: '/#sigilo', label: 'Sigilo e dados' },
+  { href: '/acompanhar', label: 'Consultar protocolo', route: '/acompanhar' },
+  { href: '/#duvidas', label: 'Dúvidas' },
 ];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const router = useRouter();
 
   /*
-    Sentinela no topo do documento em vez de ouvir `scroll`.
-    Com um link de âncora (/#categories) ou um refresh no meio da página, o
-    navegador já entrega a página rolada e um listener de scroll só dispara no
-    primeiro movimento — a barra ficava em modo claro-sobre-escuro por cima do
-    conteúdo claro e o texto sumia. O observer resolve na primeira medição,
-    qualquer que seja a posição inicial.
+    Sentinela no topo em vez de ouvir `scroll`: com âncora ou refresh no meio
+    da página o navegador já entrega a página rolada, e o observer resolve na
+    primeira medição — a barra nunca fica transparente por cima do conteúdo.
   */
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
-
     const observer = new IntersectionObserver(
       ([entry]) => setScrolled(!entry.isIntersecting),
       { threshold: 0 },
@@ -44,52 +41,45 @@ export default function Navbar() {
     <>
       <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />
       <header className={`${styles.nav} ${scrolled ? styles.scrolled : ''}`}>
-      <div className={`${styles.inner} container`}>
-        <Link href="/" className={styles.logo} aria-label="LUMI — página inicial">
-          {/* Marca tipográfica. O brasão institucional saiu daqui: o LUMI é um
-              canal independente e não pode se apresentar como órgão público. */}
-          <span className={styles.logoMark} aria-hidden="true">
-            <Sparkle size={20} strokeWidth={2.5} />
-          </span>
-          <span className={styles.logoText}>
-            <span className={styles.logoName}>LUMI</span>
-            <span className={styles.logoOrg}>com você na proteção da vida</span>
-          </span>
-        </Link>
+        <div className={`${styles.inner} container`}>
+          {/* Marca do LUMI, sem brasão: canal independente, não órgão público. */}
+          <Link href="/" className={styles.logo} aria-label="LUMI — página inicial">
+            <Image
+              src="/icons/icon-192.png"
+              alt=""
+              width={40}
+              height={40}
+              className={styles.logoMark}
+              priority
+            />
+            <span className={styles.logoText}>
+              <span className={styles.logoName}>LUMI</span>
+              <span className={styles.logoTag}>Canal independente de denúncias</span>
+            </span>
+          </Link>
 
-        <nav className={styles.links} aria-label="Navegação principal">
-          {LINKS.map(({ href, label, icon: Icon, route }) => {
-            const active = route
-              ? route === '/'
-                ? pathname === '/'
-                : pathname.startsWith(route)
-              : false;
-            return (
+          <nav className={styles.links} aria-label="Navegação principal">
+            {LINKS.map(({ href, label, route }) => (
               <Link
                 key={href}
                 href={href}
                 className={styles.link}
-                aria-current={active ? 'page' : undefined}
+                aria-current={route && pathname.startsWith(route) ? 'page' : undefined}
               >
-                <Icon size={17} aria-hidden="true" />
                 {label}
               </Link>
-            );
-          })}
-          <Link href="/admin" className={styles.adminLink}>
-            <Lock size={15} aria-hidden="true" />
-            Painel
-          </Link>
-        </nav>
+            ))}
+          </nav>
 
-        <button
-          className={styles.cta}
-          onClick={() => router.push('/#categories')}
-        >
-          <span className={styles.ctaFull}>Denunciar agora</span>
-          <span className={styles.ctaShort}>Denunciar</span>
-          <ArrowRight size={17} aria-hidden="true" />
-        </button>
+          <div className={styles.actions}>
+            <Link href="/admin" className={styles.staff}>
+              Área da equipe
+            </Link>
+            <Link href="/#denunciar" className={styles.cta}>
+              Fazer denúncia
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
         </div>
       </header>
     </>

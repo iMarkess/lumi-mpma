@@ -24,7 +24,7 @@ export type Status =
 export type Priority = 'alta' | 'media' | 'baixa';
 
 export interface ComplaintEvent {
-  id: string;
+  id?: string;
   fromStatus: Status | null;
   toStatus: Status;
   note: string | null;
@@ -71,7 +71,8 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* ignore */
     }
-    throw new Error(message);
+    // status junto: quem chama distingue 404 (não existe) de falha de rede.
+    throw Object.assign(new Error(message), { status: res.status });
   }
   return res.json() as Promise<T>;
 }

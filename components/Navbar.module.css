@@ -1,37 +1,36 @@
-/*
-  O hero é branco, então a barra é escura-sobre-clara desde o topo. `.scrolled`
-  só acrescenta superfície (fundo, blur e sombra) para separar do conteúdo que
-  passa por baixo — as cores do texto não mudam.
-*/
-.nav {
-  position: fixed;
+/* Sentinela de 1px no topo: some da tela = página rolada. */
+.sentinel {
+  position: absolute;
   top: 0;
   left: 0;
-  right: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.nav {
+  position: sticky;
+  top: 0;
   z-index: var(--z-nav);
-  padding-top: env(safe-area-inset-top);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  background: rgba(247, 245, 240, 0.86);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
   border-bottom: 1px solid transparent;
-  transition: background var(--dur-slow) var(--ease-out),
-              box-shadow var(--dur-slow) var(--ease-out),
-              border-color var(--dur-slow) var(--ease-out);
+  transition: border-color var(--dur-base) var(--ease-out),
+    background-color var(--dur-base) var(--ease-out);
 }
 
 .scrolled {
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(20px) saturate(170%);
-  -webkit-backdrop-filter: blur(20px) saturate(170%);
-  border-bottom-color: var(--border);
-  box-shadow: 0 4px 20px -12px rgba(15, 23, 42, 0.35);
+  background: rgba(247, 245, 240, 0.96);
+  border-bottom-color: var(--line);
 }
 
 .inner {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: var(--space-4);
-  min-height: var(--nav-h);
+  gap: var(--space-8);
 }
 
 /* ===== Marca ===== */
@@ -39,46 +38,33 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 48px;
   flex-shrink: 0;
+  border-radius: var(--radius-sm);
 }
 
 .logoMark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 40px;
   height: 40px;
-  flex-shrink: 0;
-  border-radius: 13px;
-  background: var(--grad-brand);
-  color: #fff;
-  box-shadow: 0 6px 18px -6px rgba(30, 111, 196, 0.8);
-  transition: transform var(--dur-slow) var(--ease-spring);
-}
-
-.logo:hover .logoMark {
-  transform: scale(1.06);
+  border-radius: 11px;
+  box-shadow: 0 0 0 1px rgba(10, 31, 68, 0.08), var(--shadow-xs);
 }
 
 .logoText {
   display: flex;
   flex-direction: column;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .logoName {
   font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: var(--secondary);
+  font-weight: 700;
+  font-size: 1.125rem;
+  letter-spacing: 0.04em;
+  color: var(--navy-900);
 }
 
-.logoOrg {
-  font-size: 0.7rem;
-  font-weight: 600;
-  white-space: nowrap;
+.logoTag {
+  font-size: 0.8125rem;
   color: var(--text-muted);
 }
 
@@ -87,111 +73,116 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  margin-inline: auto;
 }
 
 .link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: var(--space-2) var(--space-4);
+  position: relative;
+  padding: 10px 14px;
   border-radius: var(--radius-full);
-  color: var(--text-soft);
+  font-size: 0.9375rem;
   font-weight: 600;
-  font-size: var(--text-sm);
+  color: var(--text-soft);
   transition: color var(--dur-fast) var(--ease-out),
-              background var(--dur-fast) var(--ease-out);
+    background-color var(--dur-fast) var(--ease-out);
 }
 
 .link:hover {
-  color: var(--secondary);
-  background: rgba(0, 69, 142, 0.08);
+  color: var(--navy-900);
+  background: rgba(10, 31, 68, 0.05);
 }
 
 .link[aria-current='page'] {
-  color: var(--secondary);
-  font-weight: 700;
-  background: rgba(0, 69, 142, 0.1);
+  color: var(--navy-900);
 }
 
-.adminLink {
-  display: inline-flex;
+.link[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+/* ===== Ações ===== */
+.actions {
+  display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  margin-left: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-strong);
-  color: var(--text-soft);
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+.staff {
+  font-size: 0.875rem;
   font-weight: 600;
-  font-size: var(--text-sm);
-  transition: color var(--dur-base) var(--ease-out),
-              border-color var(--dur-base) var(--ease-out),
-              background var(--dur-base) var(--ease-out);
+  color: var(--text-muted);
+  padding: 10px 4px;
+  transition: color var(--dur-fast) var(--ease-out);
 }
 
-.adminLink:hover {
-  color: var(--secondary);
-  border-color: var(--secondary);
-  background: rgba(0, 69, 142, 0.06);
+.staff:hover {
+  color: var(--navy-900);
 }
 
-/* ===== CTA ===== */
 .cta {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   min-height: 44px;
-  padding: var(--space-3) var(--space-5);
+  padding: 0 20px;
   border-radius: var(--radius-full);
-  background: var(--grad-primary);
+  background: var(--primary);
   color: #fff;
   font-weight: 700;
-  font-size: var(--text-sm);
-  white-space: nowrap;
-  box-shadow: 0 10px 26px -8px rgba(230, 35, 16, 0.7);
-  transition: transform var(--dur-base) var(--ease-out),
-              box-shadow var(--dur-base) var(--ease-out);
+  font-size: 0.9375rem;
+  box-shadow: 0 6px 16px -6px rgba(214, 58, 31, 0.55);
+  transition: background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
 .cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 34px -8px rgba(230, 35, 16, 0.8);
+  background: var(--primary-dark);
 }
 
-.cta svg { transition: transform var(--dur-base) var(--ease-out); }
-.cta:hover svg { transform: translateX(3px); }
-
-.ctaShort { display: none; }
-
-/* ===== Responsivo ===== */
-@media (max-width: 1024px) {
-  .logoOrg { display: none; }
+.cta:active {
+  transform: scale(0.97);
 }
 
-@media (max-width: 900px) {
-  /* Em telas pequenas a navegação vive na barra inferior. Repetir os mesmos
-     destinos aqui em cima seria navegação duplicada. Fica só marca + ação. */
-  .links { display: none; }
-  .ctaFull { display: none; }
-  .ctaShort { display: inline; }
+.link:focus-visible,
+.staff:focus-visible,
+.cta:focus-visible,
+.logo:focus-visible {
+  outline: 3px solid var(--secondary-light);
+  outline-offset: 3px;
 }
 
-@media (max-width: 380px) {
-  .logoName { font-size: var(--text-base); }
-  .cta { padding: var(--space-2) var(--space-4); }
+/* Tablet: some o menu textual; a barra inferior cobre a navegação. */
+@media (max-width: 1080px) {
+  .links {
+    display: none;
+  }
+  .actions {
+    margin-left: auto;
+  }
 }
 
-/* Alvo do IntersectionObserver, no topo absoluto do documento. A altura é a
-   distância de rolagem que dispara a troca: enquanto qualquer parte dela
-   estiver visível, a barra fica no modo claro-sobre-escuro. Sem altura
-   suficiente a troca vira um piscar de 1px. */
-.sentinel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 24px;
-  pointer-events: none;
+@media (max-width: 640px) {
+  .logoTag,
+  .staff {
+    display: none;
+  }
+  .cta {
+    padding: 0 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav,
+  .link,
+  .cta {
+    transition: none;
+  }
 }

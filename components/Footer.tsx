@@ -1,38 +1,38 @@
-'use client';
-
+import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, ExternalLink, Sparkle } from 'lucide-react';
 import styles from './Footer.module.css';
 
 /*
-  Todo destino aqui foi verificado. Nada de href="#": link morto em rodapé
-  institucional custa confiança, e a política de privacidade precisa ficar
-  alcançável de qualquer página (exigência da Play Store).
+  Todo destino aqui foi verificado. /privacidade e /excluir-conta são servidas
+  pelo backend (nginx faz o proxy), por isso usam <a> e não <Link>.
 */
-type FooterLink = { href: string; label: string; external?: boolean };
+type FooterLink = { href: string; label: string; backend?: boolean };
 
-const COLUMNS: Array<{ heading: string; links: FooterLink[] }> = [
+const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
-    heading: 'Serviços',
+    title: 'Denunciar',
     links: [
-      { href: '/#categories', label: 'Fazer denúncia' },
-      { href: '/acompanhar', label: 'Acompanhar protocolo' },
-      { href: '/#orientacoes', label: 'Orientações' },
-      { href: '/#baixar', label: 'Baixar o aplicativo' },
+      { href: '/denunciar/child', label: 'Criança e adolescente' },
+      { href: '/denunciar/elderly', label: 'Idosos e pessoas com deficiência' },
+      { href: '/denunciar/env', label: 'Meio ambiente' },
+      { href: '/acompanhar', label: 'Consultar protocolo' },
     ],
   },
   {
-    heading: 'Privacidade e dados',
+    title: 'Privacidade',
     links: [
-      { href: '/privacidade', label: 'Política de privacidade' },
-      { href: '/excluir-conta', label: 'Excluir minha conta' },
+      { href: '/privacidade', label: 'Política de privacidade', backend: true },
+      { href: '/excluir-conta', label: 'Excluir conta e dados', backend: true },
+      { href: '/#sigilo', label: 'O que coletamos' },
     ],
   },
   {
-    heading: 'Sobre',
+    title: 'LUMI',
     links: [
-      { href: '/#orientacoes', label: 'Como funciona' },
-      { href: '/admin', label: 'Painel da equipe' },
+      { href: '/#como-funciona', label: 'Como funciona' },
+      { href: '/#duvidas', label: 'Perguntas frequentes' },
+      { href: '/#baixar', label: 'Aplicativo Android' },
+      { href: '/admin', label: 'Área da equipe' },
     ],
   },
 ];
@@ -40,83 +40,47 @@ const COLUMNS: Array<{ heading: string; links: FooterLink[] }> = [
 export default function Footer() {
   return (
     <footer className={styles.footer}>
-      <div className={styles.bgGlow} aria-hidden="true" />
-
-      <div className="container">
-        <div className={styles.cta}>
-          <div>
-            <h2 className={styles.ctaTitle}>Precisa fazer uma denúncia?</h2>
-            <p className={styles.ctaText}>
-              Sua coragem pode salvar vidas. A Lumi está disponível a qualquer hora.
-            </p>
-          </div>
-          <Link href="/#categories" className={styles.ctaButton}>
-            Começar agora
-            <ArrowRight size={18} aria-hidden="true" />
+      <div className={`${styles.top} container`}>
+        <div className={styles.brand}>
+          <Link href="/" className={styles.logo} aria-label="LUMI — página inicial">
+            <Image src="/icons/icon-192.png" alt="" width={44} height={44} className={styles.logoMark} />
+            <span className={styles.logoName}>LUMI</span>
           </Link>
+          <p className={styles.about}>
+            Canal independente para registrar denúncias de violência e violação de
+            direitos com sigilo, e acompanhar cada etapa pelo protocolo.
+          </p>
+          <p className={styles.emergency}>
+            Risco imediato: <a href="tel:190">190</a> · Direitos Humanos:{' '}
+            <a href="tel:100">100</a> · Disque-Denúncia: <a href="tel:181">181</a>
+          </p>
         </div>
 
-        <div className={styles.top}>
-          <div className={styles.brand}>
-            <div className={styles.logoRow}>
-              <span className={styles.logo} aria-hidden="true">
-                <Sparkle size={20} strokeWidth={2.5} />
-              </span>
-              <span className={styles.sep} aria-hidden="true" />
-              <span className={styles.brandName}>LUMI</span>
-            </div>
-            <p className={styles.brandTagline}>
-              Canal de acolhimento e encaminhamento de denúncias de violência e
-              violação de direitos. Com você na proteção da vida.
-            </p>
-            {/* Declaração explícita de independência: o app já foi retirado da
-                Play por ter sido lido como serviço de governo. */}
-            <p className={styles.disclaimer}>
-              O LUMI é um serviço independente. Não é um site do governo e não
-              representa o Ministério Público nem qualquer órgão oficial. As
-              denúncias recebidas são encaminhadas aos canais competentes.
-            </p>
-          </div>
-
-          <nav className={styles.links} aria-label="Rodapé">
-            {COLUMNS.map(({ heading, links }) => (
-              <div key={heading} className={styles.column}>
-                <h3>{heading}</h3>
-                {links.map(({ href, label, external }) =>
-                  external ? (
-                    <a
-                      key={href}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.link}
-                    >
-                      {label}
-                      <ExternalLink size={13} aria-hidden="true" />
-                      <span className="sr-only">(abre em nova aba)</span>
-                    </a>
+        {COLUMNS.map(({ title, links }) => (
+          <nav key={title} className={styles.column} aria-label={title}>
+            <h2 className={styles.columnTitle}>{title}</h2>
+            <ul>
+              {links.map(({ href, label, backend }) => (
+                <li key={href}>
+                  {backend ? (
+                    <a href={href} className={styles.link}>{label}</a>
                   ) : (
-                    <Link key={href} href={href} className={styles.link}>
-                      {label}
-                    </Link>
-                  ),
-                )}
-              </div>
-            ))}
+                    <Link href={href} className={styles.link}>{label}</Link>
+                  )}
+                </li>
+              ))}
+            </ul>
           </nav>
-        </div>
+        ))}
+      </div>
 
-        <div className={styles.bottom}>
-          {/* O ano é calculado no build (output: 'export') e recalculado no
-              cliente — suprime o aviso na virada do ano. */}
-          <p suppressHydrationWarning>
-            © {new Date().getFullYear()} LUMI — Todos os direitos reservados.
-          </p>
-          <p className={styles.emergencyNote}>
-            Emergência: <a href="tel:190">190</a> · Direitos Humanos:{' '}
-            <a href="tel:100">100</a>
-          </p>
-        </div>
+      <div className={styles.bottomRule}>
+      <div className={`${styles.bottom} container`}>
+        <p>© {new Date().getFullYear()} LUMI · com você na proteção da vida</p>
+        <p>
+          A LUMI é um serviço independente e não é canal oficial de nenhum órgão público.
+        </p>
+      </div>
       </div>
     </footer>
   );

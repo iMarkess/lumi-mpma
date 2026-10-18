@@ -14,7 +14,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { useCitizenAuth } from '@/context/CitizenAuth';
-import GoogleSignIn from '@/components/GoogleSignIn';
+import GoogleSignIn, { googleEnabled } from '@/components/GoogleSignIn';
 import styles from '../Auth.module.css';
 
 function maskCpf(v: string) {
@@ -156,8 +156,12 @@ export default function CadastroPage() {
             {loading ? <span className={styles.spinner} /> : (<><UserPlus size={18} /> Criar conta</>)}
           </button>
 
-          <div className={styles.divider}>ou</div>
-          <GoogleSignIn onCredential={onGoogle} />
+          {googleEnabled && (
+            <>
+              <div className={styles.divider}>ou</div>
+              <GoogleSignIn onCredential={onGoogle} />
+            </>
+          )}
 
           <div className={styles.switch}>
             Já tem conta? <Link href="/entrar">Entrar</Link>

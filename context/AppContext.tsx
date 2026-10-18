@@ -45,17 +45,10 @@ interface AppContextType {
   stats: { today: number; triage: number; urgent: number; completed: number };
 }
 
-const initialUsers: User[] = [
-  { id: '1', name: 'Lucas Marques', cpf: '046.675.443-41', password: '123', role: 'promotor', avatar: 'LM', mustChangePassword: false },
-  { id: '2', name: 'Ana Silva', cpf: '000.000.000-00', password: '123', role: 'secretaria', avatar: 'AS', mustChangePassword: false },
-  { id: '3', name: 'Carlos Ouvidor', cpf: '111.111.111-11', password: '123', role: 'ouvidoria', avatar: 'CO', mustChangePassword: false },
-];
+// Sem usuários embutidos: tudo isto vai no JS público do site. Login só pela API.
+const initialUsers: User[] = [];
 
-const initialComplaints: Complaint[] = [
-  { id: 'LUMI-X82J91', category: 'child', title: 'Possível negligência em escola', location: 'São Luís', status: 'recebida', priority: 'alta', date: 'Hoje, 14:20', description: 'Relato de negligência sistemática.' },
-  { id: 'LUMI-A72K12', category: 'env', title: 'Queimada irregular em terreno', location: 'Imperatriz', status: 'em_triagem', priority: 'media', date: 'Hoje, 09:15', description: 'Fogo em área de proteção.' },
-  { id: 'LUMI-B33L90', category: 'elderly', title: 'Maus-tratos por familiar', location: 'Caxias', status: 'em_analise', priority: 'alta', date: 'Ontem, 21:00', description: 'Idoso em situação de abandono.' },
-];
+const initialComplaints: Complaint[] = [];
 
 const ROLE_MAP: Record<string, Role> = {
   PROMOTOR: 'promotor', SECRETARIA: 'secretaria', OUVIDORIA: 'ouvidoria', MASTER: 'master',

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Lock, Eye, EyeOff, AlertCircle, LogIn } from 'lucide-react';
 import { useCitizenAuth } from '@/context/CitizenAuth';
-import GoogleSignIn from '@/components/GoogleSignIn';
+import GoogleSignIn, { googleEnabled } from '@/components/GoogleSignIn';
 import styles from '../Auth.module.css';
 
 export default function EntrarPage() {
@@ -53,7 +53,7 @@ export default function EntrarPage() {
 
         <form className={styles.card} onSubmit={submit}>
           <h1 className={styles.title}>Entrar</h1>
-          <p className={styles.subtitle}>Acesse sua conta para denunciar e acompanhar.</p>
+          <p className={styles.subtitle}>A conta é opcional: para denunciar, você não precisa entrar.</p>
 
           {error && (
             <div className={styles.error}>
@@ -104,11 +104,18 @@ export default function EntrarPage() {
             {loading ? <span className={styles.spinner} /> : (<><LogIn size={18} /> Entrar</>)}
           </button>
 
-          <div className={styles.divider}>ou</div>
-          <GoogleSignIn onCredential={onGoogle} />
+          {googleEnabled && (
+            <>
+              <div className={styles.divider}>ou</div>
+              <GoogleSignIn onCredential={onGoogle} />
+            </>
+          )}
 
           <div className={styles.switch}>
             Não tem conta? <Link href="/cadastro">Cadastre-se</Link>
+          </div>
+          <div className={styles.switch}>
+            <Link href="/#denunciar">Denunciar sem conta, de forma anônima</Link>
           </div>
         </form>
       </div>
