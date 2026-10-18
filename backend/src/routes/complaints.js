@@ -64,8 +64,23 @@ export default async function complaintRoutes(app) {
     const protocol = String(request.params.protocol).trim().toUpperCase();
     const complaint = await prisma.complaint.findUnique({
       where: { id: protocol },
-      include: {
-        events: { orderBy: { createdAt: 'asc' } },
+      // Consulta pública: só o que o denunciante precisa ver. Sem e-mail de
+      // contato nem qual servidor alterou o status.
+      select: {
+        id: true,
+        category: true,
+        title: true,
+        location: true,
+        description: true,
+        status: true,
+        priority: true,
+        anonymous: true,
+        createdAt: true,
+        updatedAt: true,
+        events: {
+          orderBy: { createdAt: 'asc' },
+          select: { fromStatus: true, toStatus: true, note: true, createdAt: true },
+        },
         attachments: { select: { id: true, mime: true, size: true, createdAt: true } },
       },
     });
