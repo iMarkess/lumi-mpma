@@ -13,6 +13,10 @@ import notificationRoutes from './routes/notifications.js';
 
 const app = Fastify({
   logger: { level: env.nodeEnv === 'production' ? 'info' : 'debug' },
+  // Atrás do nginx: usa o IP real do X-Forwarded-For. Sem isso todos os
+  // usuários dividem o mesmo limite de requisições. Seguro porque a porta da
+  // API só escuta em 127.0.0.1 (ver docker-compose.yml).
+  trustProxy: true,
 });
 
 await app.register(cors, {

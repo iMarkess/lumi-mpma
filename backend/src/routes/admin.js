@@ -7,8 +7,15 @@ const patchSchema = z.object({
 });
 
 export default async function adminRoutes(app) {
-  // Todas as rotas de admin exigem token válido
-  app.addHook('onRequest', app.authenticate);
+  // Todas as rotas de admin exigem token válido DE SERVIDOR. Token de cidadão
+  // (kind: 'citizen', emitido no cadastro aberto do app) não abre o painel.
+  app.addHook('onRequest', async (request, reply) => {
+    await app.authenticate(request, reply);
+    if (reply.sent) return;
+    if (request.user?.kind === 'citizen' || !request.user?.role) {
+      return reply.code(403).send({ error: 'Acesso restrito à equipe.' });
+    }
+  });
 
   // Lista com filtros
   app.get('/api/admin/complaints', async (request) => {

@@ -57,7 +57,10 @@ export default async function complaintRoutes(app) {
   });
 
   // Consulta pública por protocolo (acompanhamento)
-  app.get('/api/complaints/:protocol', async (request, reply) => {
+  // Limite por IP: protocolo é a única "senha" da denúncia — impede varredura.
+  app.get('/api/complaints/:protocol', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
     const protocol = String(request.params.protocol).trim().toUpperCase();
     const complaint = await prisma.complaint.findUnique({
       where: { id: protocol },
