@@ -1,0 +1,151 @@
+.page {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 24px 16px;
+  overflow: hidden;
+  background: #F5F7FB;
+}
+
+.glow {
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 70%;
+  background:
+    radial-gradient(40% 60% at 30% 40%, rgba(255, 106, 77, 0.18), transparent 70%),
+    radial-gradient(40% 60% at 75% 30%, rgba(37, 99, 235, 0.14), transparent 70%);
+  pointer-events: none;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  width: min(100%, 420px);
+  padding: 36px 32px;
+  border-radius: 28px;
+  background: #fff;
+  border: 1px solid #E6E9F2;
+  box-shadow: 0 30px 70px -30px rgba(11, 21, 48, 0.3);
+}
+
+.logo {
+  border-radius: 16px;
+  justify-self: center;
+}
+
+.title {
+  text-align: center;
+  font-size: 1.625rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0B1530;
+}
+
+.subtitle {
+  margin-top: -8px;
+  text-align: center;
+  color: #5E6A86;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #3A4766;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 0 6px 0 14px;
+  border-radius: 14px;
+  border: 1.5px solid #DCE1EC;
+  color: #5E6A86;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inputWrap:focus-within {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.inputWrap input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0B1530;
+  outline: none;
+}
+
+.eye {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  color: #5E6A86;
+}
+
+.error {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #FFEFEC;
+  color: #C2290F;
+  font-weight: 600;
+}
+
+.submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #FF6A4D, #E3321B);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 14px 30px -14px rgba(227, 50, 27, 0.8);
+}
+
+.submit:disabled {
+  opacity: 0.7;
+}
+
+.link {
+  justify-self: center;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #1D4ED8;
+}
+
+.help {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #F5F7FB;
+  font-size: 0.9375rem;
+  color: #3A4766;
+}
+
+.back {
+  justify-self: center;
+  font-size: 0.875rem;
+  color: #5E6A86;
+  text-decoration: underline;
+}
+
+.eye:focus-visible,
+.submit:focus-visible,
+.link:focus-visible,
+.back:focus-visible {
+  outline: 3px solid #2563EB;
+  outline-offset: 2px;
+}

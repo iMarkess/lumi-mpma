@@ -8,6 +8,7 @@ import { CatIcon, PriorityBadge, StatusBadge, useAdminData } from '@/components/
 import {
   adminApi,
   CATEGORY_LABEL,
+  displayTitle,
   fmtDate,
   PRIORITY_LABEL,
   STATUS_LABEL,
@@ -184,7 +185,7 @@ function TriageInner() {
                         <span className={t.itemId}>{c.id}</span>
                         <span className={t.itemTime}>{timeAgo(c.createdAt)}</span>
                       </span>
-                      <span className={t.itemTitle}>{c.title}</span>
+                      <span className={t.itemTitle}>{displayTitle(c)}</span>
                       <span className={t.itemBadges}>
                         <StatusBadge status={c.status} />
                         {c.priority === 'alta' && <PriorityBadge priority={c.priority} />}
@@ -280,7 +281,7 @@ function Detail({ id, onClose, onChanged }: { id: string; onClose: () => void; o
             <PriorityBadge priority={c.priority} />
           </div>
 
-          <h3 className={t.detailTitle}>{c.title}</h3>
+          <h3 className={t.detailTitle}>{displayTitle(c)}</h3>
 
           <dl className={t.facts}>
             <div>

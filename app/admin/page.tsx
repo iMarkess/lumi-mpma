@@ -7,6 +7,7 @@ import { CatIcon, PriorityBadge, StatusBadge, useAdminData } from '@/components/
 import {
   adminApi,
   CATEGORY_LABEL,
+  displayTitle,
   STATUS_LABEL,
   STATUS_ORDER,
   timeAgo,
@@ -129,7 +130,7 @@ export default function AdminOverview() {
                 <Link key={c.id} href={`/admin/triage?id=${c.id}`} className={s.row}>
                   <CatIcon cat={c.category} />
                   <span style={{ minWidth: 0 }}>
-                    <span className={s.rowTitle} style={{ display: 'block' }}>{c.title}</span>
+                    <span className={s.rowTitle} style={{ display: 'block' }}>{displayTitle(c)}</span>
                     <span className={s.rowMeta}>
                       {c.id} · {c.location} · {timeAgo(c.createdAt)}
                     </span>
@@ -222,7 +223,7 @@ export default function AdminOverview() {
               <Link key={c.id} href={`/admin/triage?id=${c.id}`} className={s.row}>
                 <CatIcon cat={c.category} />
                 <span style={{ minWidth: 0 }}>
-                  <span className={s.rowTitle} style={{ display: 'block' }}>{c.title}</span>
+                  <span className={s.rowTitle} style={{ display: 'block' }}>{displayTitle(c)}</span>
                   <span className={s.rowMeta}>
                     {c.id} · {CATEGORY_LABEL[c.category]} · {timeAgo(c.createdAt)}
                   </span>

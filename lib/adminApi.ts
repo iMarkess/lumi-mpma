@@ -165,3 +165,9 @@ export function timeAgo(iso: string) {
   const d = Math.floor(s / 86400);
   return d === 1 ? 'ontem' : `há ${d} dias`;
 }
+
+/** Denúncias antigas foram gravadas com o id cru da área ("Denúncia elderly"). */
+export function displayTitle(c: { title: string }) {
+  const m = c.title.match(/^Denúncia (child|elderly|env)$/);
+  return m ? `Denúncia: ${CATEGORY_LABEL[m[1] as Category]}` : c.title;
+}
