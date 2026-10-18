@@ -6,7 +6,7 @@
 /* Navbar sticky ocupa espaço no fluxo: não precisa compensar. */
 .content {
   max-width: 760px;
-  padding-block: clamp(32px, 6vw, 64px) clamp(56px, 8vw, 96px);
+  padding-block: clamp(112px, 12vw, 140px) clamp(56px, 8vw, 96px);
 }
 
 .header {

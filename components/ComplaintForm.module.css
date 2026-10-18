@@ -463,7 +463,8 @@
   margin-top: var(--space-6);
   padding: 20px 22px;
   border-radius: 20px;
-  background: var(--navy-900);
+  background: linear-gradient(135deg, #12306A, #0A1532);
+  border: 1px solid var(--hairline-strong);
   color: #fff;
 }
 

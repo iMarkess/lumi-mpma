@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Lexend, Source_Sans_3 } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import { CitizenAuthProvider } from "@/context/CitizenAuth";
@@ -8,19 +8,13 @@ import BottomNav from "@/components/BottomNav";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import InstallPrompt from "@/components/InstallPrompt";
 
-// Source Sans 3: desenhada para leitura longa em tela, com acentos do
-// português bem resolvidos. Lexend fica só nos títulos.
-const sourceSans = Source_Sans_3({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-source",
-  display: "swap",
-});
-
-const lexend = Lexend({
+// Plus Jakarta Sans: geométrica, calorosa e com acentos do português bem
+// resolvidos. Uma família só, do título ao corpo — a identidade vem da luz e
+// da mascote, não de misturar fontes.
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-lexend",
+  variable: "--font-jakarta",
   display: "swap",
 });
 
@@ -77,7 +71,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F7F5F0" },
+    { media: "(prefers-color-scheme: light)", color: "#050B1F" },
     { media: "(prefers-color-scheme: dark)", color: "#002D5C" },
   ],
   width: "device-width",
@@ -95,8 +89,13 @@ export default function RootLayout({
   return (
     // As variáveis de fonte ficam no <html>: os tokens --font-display/--font-body
     // são resolvidos no :root, e lá uma variável definida só no <body> não existe.
-    <html lang="pt-BR" className={`${sourceSans.variable} ${lexend.variable}`} suppressHydrationWarning>
-      <body className={sourceSans.className} suppressHydrationWarning>
+    <html lang="pt-BR" className={jakarta.variable} suppressHydrationWarning>
+      <head>
+        {/* Marca que há JS antes da 1ª pintura: só então o conteúdo pode
+            começar escondido para a animação de entrada. Sem JS, tudo aparece. */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+      </head>
+      <body className={jakarta.className} suppressHydrationWarning>
         <AppProvider>
           <CitizenAuthProvider>
           {children}

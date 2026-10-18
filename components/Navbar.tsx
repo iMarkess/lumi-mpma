@@ -4,14 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import styles from './Navbar.module.css';
 
-// `route` marca o item como página atual. Âncoras da home não têm rota
-// própria, então nunca recebem aria-current.
+// `route` marca o item como página atual; âncoras da home não recebem aria-current.
 const LINKS = [
   { href: '/#como-funciona', label: 'Como funciona' },
-  { href: '/#sigilo', label: 'Sigilo e dados' },
+  { href: '/#sigilo', label: 'Sigilo' },
   { href: '/acompanhar', label: 'Consultar protocolo', route: '/acompanhar' },
   { href: '/#duvidas', label: 'Dúvidas' },
 ];
@@ -21,18 +20,12 @@ export default function Navbar() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  /*
-    Sentinela no topo em vez de ouvir `scroll`: com âncora ou refresh no meio
-    da página o navegador já entrega a página rolada, e o observer resolve na
-    primeira medição — a barra nunca fica transparente por cima do conteúdo.
-  */
+  // Sentinela em vez de ouvir `scroll`: resolve na 1ª medição, mesmo com a
+  // página já entregue rolada (âncora ou refresh).
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setScrolled(!entry.isIntersecting),
-      { threshold: 0 },
-    );
+    const observer = new IntersectionObserver(([e]) => setScrolled(!e.isIntersecting));
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
@@ -40,22 +33,12 @@ export default function Navbar() {
   return (
     <>
       <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />
-      <header className={`${styles.nav} ${scrolled ? styles.scrolled : ''}`}>
-        <div className={`${styles.inner} container`}>
-          {/* Marca do LUMI, sem brasão: canal independente, não órgão público. */}
+      <header className={`${styles.wrap} ${scrolled ? styles.scrolled : ''}`}>
+        <div className={styles.pill}>
+          {/* Sem brasão: a LUMI é independente, não órgão público. */}
           <Link href="/" className={styles.logo} aria-label="LUMI — página inicial">
-            <Image
-              src="/icons/icon-192.png"
-              alt=""
-              width={40}
-              height={40}
-              className={styles.logoMark}
-              priority
-            />
-            <span className={styles.logoText}>
-              <span className={styles.logoName}>LUMI</span>
-              <span className={styles.logoTag}>Canal independente de denúncias</span>
-            </span>
+            <Image src="/icons/icon-192.png" alt="" width={34} height={34} className={styles.logoMark} priority />
+            <span className={styles.logoName}>LUMI</span>
           </Link>
 
           <nav className={styles.links} aria-label="Navegação principal">
@@ -69,17 +52,17 @@ export default function Navbar() {
                 {label}
               </Link>
             ))}
+            <Link href="/admin" className={styles.link}>
+              Equipe
+            </Link>
           </nav>
 
-          <div className={styles.actions}>
-            <Link href="/admin" className={styles.staff}>
-              Área da equipe
-            </Link>
-            <Link href="/#denunciar" className={styles.cta}>
-              Fazer denúncia
-              <ArrowRight size={16} aria-hidden="true" />
-            </Link>
-          </div>
+          <Link href="/#denunciar" className={styles.cta}>
+            Denunciar
+            <span className={styles.ctaIcon} aria-hidden="true">
+              <ArrowUpRight size={16} strokeWidth={2} />
+            </span>
+          </Link>
         </div>
       </header>
     </>

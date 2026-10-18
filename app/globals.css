@@ -142,8 +142,8 @@
   --z-modal: 1000;
 
   /* ===== FONTES ===== */
-  --font-display: var(--font-lexend), 'Lexend', system-ui, sans-serif;
-  --font-body: var(--font-source), system-ui, sans-serif;
+  --font-display: var(--font-jakarta), system-ui, sans-serif;
+  --font-body: var(--font-jakarta), system-ui, sans-serif;
 
   /* ===== ALTURA DA NAVBAR (usada para reservar espaço no conteúdo) ===== */
   --nav-h: 76px;
@@ -451,15 +451,17 @@ select::placeholder {
 
 .bottom-nav {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: calc(68px + env(safe-area-inset-bottom));
-  padding: 0 var(--space-2) env(safe-area-inset-bottom);
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid var(--line);
+  left: 10px;
+  right: 10px;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  height: 66px;
+  padding: 0 4px;
+  border-radius: 26px;
+  background: rgba(5, 11, 31, 0.86);
+  border: 1px solid var(--hairline-strong);
+  box-shadow: var(--core-inset), 0 20px 50px -16px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
   display: none;
   align-items: stretch;
   z-index: var(--z-bottom-nav);
@@ -474,7 +476,7 @@ select::placeholder {
   justify-content: center;
   gap: 2px;
   min-width: 48px;
-  color: var(--text-muted);
+  color: var(--on-night-muted);
   transition: color var(--dur-fast) var(--ease-out);
 }
 
@@ -484,7 +486,7 @@ select::placeholder {
 }
 
 .nav-item.active {
-  color: var(--navy-900);
+  color: #fff;
 }
 
 .nav-icon {
@@ -498,7 +500,7 @@ select::placeholder {
 }
 
 .nav-item.active .nav-icon {
-  background: rgba(10, 31, 68, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .nav-label {
@@ -507,7 +509,7 @@ select::placeholder {
 }
 
 .nav-label-center {
-  color: var(--primary-dark);
+  color: #FF8A78;
 }
 
 .center-btn-inner {
@@ -517,9 +519,9 @@ select::placeholder {
   height: 48px;
   margin-top: -22px;
   border-radius: 16px;
-  background: var(--primary);
+  background: var(--grad-cta);
   color: #fff;
-  box-shadow: 0 8px 18px -6px rgba(214, 58, 31, 0.6), 0 0 0 4px #fff;
+  box-shadow: 0 10px 22px -6px rgba(255, 77, 61, 0.8), 0 0 0 4px var(--night-900);
   transition: transform var(--dur-fast) var(--ease-out);
 }
 
@@ -670,7 +672,7 @@ select::placeholder {
   /* Acima da bottom-nav, nunca por baixo. */
   /* Compacto no celular: continua no alcance do polegar sem cobrir texto. */
   .panic-button {
-    bottom: calc(80px + env(safe-area-inset-bottom));
+    bottom: calc(88px + env(safe-area-inset-bottom));
     right: calc(var(--space-3) + env(safe-area-inset-right));
     min-height: 44px;
     padding: 0 14px;
@@ -679,7 +681,7 @@ select::placeholder {
   .panic-label-long { display: none; }
 
   /* Reserva o espaço da bottom-nav para o conteúdo não ficar escondido. */
-  body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+  body { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -710,4 +712,93 @@ select::placeholder {
 
 @media (prefers-reduced-motion: reduce) {
   .page-enter { animation: none; }
+}
+
+/* =========================================================================
+   NOITE — tema das páginas públicas.
+   LUMI é luz: o fundo é a noite, e a cor da marca aparece como brilho.
+   O painel (/admin) continua no tema claro acima.
+   ========================================================================= */
+:root {
+  --night-950: #030817;
+  --night-900: #050B1F;
+  --night-800: #0A1532;
+  --night-700: #111F45;
+  --glow-red: #FF4D3D;
+  --glow-amber: #FFB547;
+  --glow-blue: #3D8BFF;
+  --on-night: #F4F7FF;          /* 18:1 sobre --night-900 */
+  --on-night-soft: #C5CEE6;     /* 11:1 */
+  --on-night-muted: #8F9BBB;    /* 6.4:1 — passa AA em corpo */
+  --hairline: rgba(255, 255, 255, 0.09);
+  --hairline-strong: rgba(255, 255, 255, 0.16);
+  --shell: rgba(255, 255, 255, 0.035);
+  --core: rgba(255, 255, 255, 0.05);
+  --core-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --grad-light: linear-gradient(120deg, #FFB547 0%, #FF4D3D 45%, #3D8BFF 100%);
+  --grad-cta: linear-gradient(135deg, #FF6A4D 0%, #E8361F 100%);
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.night {
+  background: var(--night-900);
+  color: var(--on-night);
+}
+
+/* Fundo da rolagem além da página (iOS/Chrome) também fica noite. */
+html:has(.night),
+body:has(.night) {
+  background: var(--night-900);
+}
+
+/* Entrada ao rolar (components/Reveal.tsx). Só esconde se houver JS. */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  filter: blur(6px);
+  transition: opacity 0.9s var(--ease-fluid), transform 0.9s var(--ease-fluid),
+    filter 0.9s var(--ease-fluid);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+
+/* Páginas internas: os mesmos componentes do tema claro, com as cores
+   redefinidas para a noite. Assim o painel claro continua intacto. */
+.night {
+  --bg: var(--night-900);
+  --bg-deep: var(--night-900);
+  --bg-surface: #0C1838;
+  --surface: #0C1838;
+  --surface-alt: #0C1838;
+  --surface-sunken: rgba(255, 255, 255, 0.05);
+  --line: var(--hairline-strong);
+  --border: var(--hairline);
+  --border-strong: rgba(255, 255, 255, 0.24);
+  --navy-900: #FFFFFF;
+  --text: #FFFFFF;
+  --text-soft: var(--on-night-soft);
+  --text-muted: var(--on-night-muted);
+  --secondary: #6AA8FF;
+  --secondary-light: #FFB547;
+  --primary: #FF5A47;
+  --primary-dark: #FF8A78;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #FF7A68;
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 24px 60px -24px rgba(0, 0, 0, 0.75);
 }
