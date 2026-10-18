@@ -90,7 +90,7 @@ const PLAY_URL = 'https://play.google.com/store/apps/details?id=br.com.lumi.denu
 
 export default function Home() {
   return (
-    <div className={`${styles.page} night`}>
+    <div className={`${styles.page} day`}>
       <a href="#conteudo" className="skip-link">
         Pular para o conteúdo
       </a>
@@ -173,11 +173,6 @@ export default function Home() {
                   </ol>
                 </div>
               </figure>
-
-              <div className={`${styles.float} ${styles.floatChip}`} aria-hidden="true">
-                <span className={styles.chipIcon}><ShieldCheck size={16} strokeWidth={1.8} /></span>
-                100% anônimo se você quiser
-              </div>
             </div>
           </div>
 

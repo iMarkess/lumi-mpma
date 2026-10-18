@@ -108,7 +108,7 @@ export default function AcompanharPage() {
   };
 
   return (
-    <div className={`${styles.page} night`}>
+    <div className={`${styles.page} day`}>
       <Navbar />
       <main id="conteudo" className={styles.main}>
         <div className={`${styles.content} container`}>

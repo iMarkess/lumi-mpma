@@ -5,14 +5,14 @@
   max-width: 460px;
   padding: 6px;
   border-radius: 999px;
-  background: rgba(3, 8, 23, 0.6);
-  border: 1px solid var(--hairline-strong);
+  background: #fff;
+  border: 1.5px solid rgba(11, 21, 48, 0.14);
   transition: border-color 0.5s var(--ease-fluid), box-shadow 0.5s var(--ease-fluid);
 }
 
 .form:focus-within {
-  border-color: rgba(255, 181, 71, 0.6);
-  box-shadow: 0 0 0 4px rgba(255, 181, 71, 0.12);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
 .input {
@@ -25,12 +25,12 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #fff;
+  color: #0B1530;
   outline: none;
 }
 
 .input::placeholder {
-  color: var(--on-night-muted);
+  color: #5E6A86;
   font-weight: 600;
 }
 
@@ -41,8 +41,8 @@
   min-height: 48px;
   padding: 0 20px;
   border-radius: 999px;
-  background: #fff;
-  color: var(--night-900);
+  background: #0B1530;
+  color: #fff;
   font-weight: 800;
   transition: transform 0.5s var(--ease-fluid);
 }
@@ -52,6 +52,6 @@
 }
 
 .button:focus-visible {
-  outline: 2px solid var(--glow-amber);
+  outline: 3px solid #2563EB;
   outline-offset: 3px;
 }

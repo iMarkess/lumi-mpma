@@ -42,7 +42,7 @@ export default function EntrarPage() {
   }
 
   return (
-    <main className={`${styles.shell} night`}>
+    <main className={`${styles.shell} day`}>
       <div className={styles.hero} />
       <div className={styles.content}>
         <div className={styles.logoBox}>

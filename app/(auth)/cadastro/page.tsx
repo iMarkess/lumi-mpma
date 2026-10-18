@@ -64,7 +64,7 @@ export default function CadastroPage() {
   }
 
   return (
-    <main className={`${styles.shell} night`}>
+    <main className={`${styles.shell} day`}>
       <div className={styles.hero} />
       <div className={styles.content}>
         <div className={styles.logoBox}>

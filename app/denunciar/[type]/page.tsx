@@ -43,7 +43,7 @@ export default async function DenunciarPage({ params }: { params: Promise<{ type
   const category = type as Category;
 
   return (
-    <main className={`${styles.main} night`}>
+    <main className={`${styles.main} day`}>
       <Navbar />
       <div className={`${styles.content} container`}>
         <header className={styles.header}>
