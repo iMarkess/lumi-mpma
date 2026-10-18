@@ -4,7 +4,8 @@
  *  - assets estáticos (_next, imagens, ícones, fontes): stale-while-revalidate
  *  - push notifications: prontas pra quando o backend enviar
  */
-const VERSION = 'v1';
+// Suba a versão a cada redesign: o activate apaga os caches antigos.
+const VERSION = 'v2';
 const STATIC_CACHE = `sentinela-static-${VERSION}`;
 const RUNTIME_CACHE = `sentinela-runtime-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -14,7 +15,6 @@ const PRECACHE = [
   '/offline.html',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
-  '/images/logo_mpma.png',
 ];
 
 self.addEventListener('install', (event) => {
