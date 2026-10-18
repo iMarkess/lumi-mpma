@@ -2,8 +2,11 @@ import '../../../core/network/api_client.dart';
 import '../domain/user.dart';
 
 class AuthException implements Exception {
-  AuthException(this.message);
+  AuthException(this.message, {this.statusCode});
   final String message;
+
+  /// Código HTTP; null quando nem chegou no servidor (sem rede/timeout).
+  final int? statusCode;
   @override
   String toString() => message;
 }
@@ -44,7 +47,7 @@ class ApiAuthRepository implements AuthRepository {
     try {
       return await run();
     } on ApiException catch (e) {
-      throw AuthException(e.message);
+      throw AuthException(e.message, statusCode: e.statusCode);
     }
   }
 

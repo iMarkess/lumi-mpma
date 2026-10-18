@@ -39,9 +39,9 @@ class AuthController extends Notifier<AuthState> {
       final fresh = await _repo.refresh(user);
       if (state.user?.id != user.id) return;
       await _setUser(fresh);
-    } on AuthException catch (_) {
+    } on AuthException catch (e) {
       // Token expirado/conta excluída: volta ao login. Sem rede: mantém a sessão.
-      if (state.user?.id == user.id) await _clear();
+      if (e.statusCode == 401 && state.user?.id == user.id) await _clear();
     } catch (_) {}
   }
 
