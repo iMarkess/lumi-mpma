@@ -43,7 +43,7 @@ class HomeShell extends ConsumerWidget {
           const NavigationDestination(
             icon: Icon(Icons.search_outlined),
             selectedIcon: Icon(Icons.search_rounded),
-            label: 'Acompanhar',
+            label: 'Consultar',
           ),
           NavigationDestination(
             icon: Badge(

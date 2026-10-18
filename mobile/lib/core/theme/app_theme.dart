@@ -138,6 +138,8 @@ abstract class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => textTheme.labelSmall?.copyWith(
             fontWeight: FontWeight.w700,
+            // 5 abas em tela de 360dp: sem espaçamento extra o rótulo não quebra.
+            letterSpacing: 0,
             color: states.contains(WidgetState.selected)
                 ? scheme.primary
                 : scheme.onSurfaceVariant,

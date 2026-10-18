@@ -38,7 +38,9 @@ class ProfileScreen extends ConsumerWidget {
                     color: Colors.white.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.5), width: 2),
+                      color: Colors.white.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -95,23 +97,13 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
+                // Sem ícones: em 360dp "Escuro" quebrava em duas linhas.
                 SegmentedButton<ThemeMode>(
+                  showSelectedIcon: false,
                   segments: const [
-                    ButtonSegment(
-                      value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode_rounded),
-                      label: Text('Claro'),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_rounded),
-                      label: Text('Escuro'),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.system,
-                      icon: Icon(Icons.brightness_auto_rounded),
-                      label: Text('Auto'),
-                    ),
+                    ButtonSegment(value: ThemeMode.light, label: Text('Claro')),
+                    ButtonSegment(value: ThemeMode.dark, label: Text('Escuro')),
+                    ButtonSegment(value: ThemeMode.system, label: Text('Auto')),
                   ],
                   selected: {mode},
                   onSelectionChanged: (s) =>
@@ -125,33 +117,56 @@ class ProfileScreen extends ConsumerWidget {
           // Configurações
           Text('Conta e segurança', style: t.titleMedium),
           const SizedBox(height: 10),
-          _MenuGroup(items: [
-            if (user != null && !user.isGuest) ...[
-              _MenuItem(Icons.lock_outline_rounded, 'Alterar senha',
-                  () => const ChangePasswordScreen()),
-              _MenuItem(Icons.delete_outline_rounded, 'Excluir conta',
-                  () => const DeleteAccountScreen()),
+          _MenuGroup(
+            items: [
+              if (user != null && !user.isGuest) ...[
+                _MenuItem(
+                  Icons.lock_outline_rounded,
+                  'Alterar senha',
+                  () => const ChangePasswordScreen(),
+                ),
+                _MenuItem(
+                  Icons.delete_outline_rounded,
+                  'Excluir conta',
+                  () => const DeleteAccountScreen(),
+                ),
+              ],
+              _MenuItem(
+                Icons.security_rounded,
+                'Segurança',
+                () => const SecuritySettingsScreen(),
+              ),
+              _MenuItem(
+                Icons.privacy_tip_outlined,
+                'Privacidade',
+                () => const PrivacySettingsScreen(),
+              ),
             ],
-            _MenuItem(Icons.security_rounded, 'Segurança',
-                () => const SecuritySettingsScreen()),
-            _MenuItem(Icons.privacy_tip_outlined, 'Privacidade',
-                () => const PrivacySettingsScreen()),
-          ]),
+          ),
           const SizedBox(height: 16),
           Text('Suporte', style: t.titleMedium),
           const SizedBox(height: 10),
-          _MenuGroup(items: [
-            _MenuItem(Icons.help_outline_rounded, 'Central de ajuda',
-                () => const HelpScreen()),
-            _MenuItem(Icons.info_outline_rounded, 'Sobre a LUMI',
-                () => const AboutScreen()),
-          ]),
+          _MenuGroup(
+            items: [
+              _MenuItem(
+                Icons.help_outline_rounded,
+                'Central de ajuda',
+                () => const HelpScreen(),
+              ),
+              _MenuItem(
+                Icons.info_outline_rounded,
+                'Sobre a LUMI',
+                () => const AboutScreen(),
+              ),
+            ],
+          ),
           const SizedBox(height: 22),
 
           // Sair / entrar
           if (user == null || user.isGuest)
             FilledButton.tonalIcon(
-              onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+              onPressed: () =>
+                  ref.read(authControllerProvider.notifier).logout(),
               icon: const Icon(Icons.login_rounded),
               label: const Text('Entrar ou criar conta'),
             )
@@ -167,8 +182,10 @@ class ProfileScreen extends ConsumerWidget {
             ),
           const SizedBox(height: 16),
           Center(
-            child: Text('LUMI · versão ${AppConfig.appVersion}',
-                style: t.labelSmall),
+            child: Text(
+              'LUMI · versão ${AppConfig.appVersion}',
+              style: t.labelSmall,
+            ),
           ),
         ],
       ),
@@ -181,7 +198,8 @@ class ProfileScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Sair da conta?'),
         content: const Text(
-            'Você precisará entrar de novo. As denúncias salvas neste aparelho continuam em Acompanhar.'),
+          'Você precisará entrar de novo. As denúncias salvas neste aparelho continuam em Acompanhar.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -222,17 +240,17 @@ class _MenuGroup extends StatelessWidget {
           for (var i = 0; i < items.length; i++) ...[
             ListTile(
               leading: Icon(items[i].icon),
-              title: Text(items[i].label,
-                  style: Theme.of(context).textTheme.titleSmall),
+              title: Text(
+                items[i].label,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => items[i].page()),
-                );
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => items[i].page()));
               },
             ),
-            if (i < items.length - 1)
-              const Divider(height: 1, indent: 56),
+            if (i < items.length - 1) const Divider(height: 1, indent: 56),
           ],
         ],
       ),

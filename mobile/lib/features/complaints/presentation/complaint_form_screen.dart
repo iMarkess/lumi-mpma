@@ -399,10 +399,14 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      // Sem ícone: em tela de 360dp o rótulo quebrava ("Volta/r").
+                      child: OutlinedButton(
                         onPressed: _submitting ? null : _back,
-                        icon: const Icon(Icons.chevron_left_rounded),
-                        label: const Text('Voltar'),
+                        child: const Text(
+                          'Voltar',
+                          maxLines: 1,
+                          softWrap: false,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -481,9 +485,7 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
           textCapitalization: TextCapitalization.sentences,
           onChanged: (v) => _answers[_current.field] = v,
           decoration: InputDecoration(
-            hintText: _current.optional
-                ? 'Opcional — pode deixar em branco'
-                : 'Digite aqui...',
+            hintText: _current.optional ? 'Opcional' : 'Digite aqui...',
           ),
         );
       case FieldType.textarea:
@@ -586,80 +588,89 @@ class _ComplaintFormScreenState extends ConsumerState<ComplaintFormScreen> {
       context: context,
       isDismissible: false,
       enableDrag: false,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.14),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_rounded,
-                color: AppColors.success,
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Denúncia enviada!',
-              style: Theme.of(ctx).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Registrada com sucesso. Guarde seu protocolo — ele também fica salvo em Acompanhar:',
-              style: Theme.of(ctx).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(ctx).colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    protocol,
-                    style: Theme.of(ctx).textTheme.titleMedium
-                        ?.copyWith(letterSpacing: 1),
+      // Rolável: em tela pequena "Voltar ao início" ficava cortado.
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.copy_rounded, size: 18),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: protocol));
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        const SnackBar(content: Text('Protocolo copiado.')),
-                      );
-                    },
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: AppColors.success,
+                    size: 40,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Denúncia enviada!',
+                  style: Theme.of(ctx).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Registrada com sucesso. Guarde seu protocolo — ele também fica salvo em Acompanhar:',
+                  style: Theme.of(ctx).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        protocol,
+                        style: Theme.of(ctx).textTheme.titleMedium
+                            ?.copyWith(letterSpacing: 1),
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.copy_rounded, size: 18),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: protocol));
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(content: Text('Protocolo copiado.')),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    context.go('/acompanhar?p=$protocol');
+                  },
+                  child: const Text('Acompanhar denúncia'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    context.go('/home');
+                  },
+                  child: const Text('Voltar ao início'),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.go('/acompanhar?p=$protocol');
-              },
-              child: const Text('Acompanhar denúncia'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.go('/home');
-              },
-              child: const Text('Voltar ao início'),
-            ),
-          ],
+          ),
         ),
       ),
     );
