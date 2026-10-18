@@ -1,107 +1,145 @@
 'use client';
 
-import { BarChart3, TrendingUp, PieChart, Download } from 'lucide-react';
-import styles from '../Dashboard.module.css';
-import { useAppContext } from '@/context/AppContext';
+import { useMemo, useState } from 'react';
+import { Download, Printer } from 'lucide-react';
+import { useAdminData } from '@/components/admin/ui';
+import {
+  adminApi,
+  CATEGORY_LABEL,
+  PRIORITY_LABEL,
+  STATUS_LABEL,
+  STATUS_ORDER,
+  type AdminComplaint,
+  type Category,
+  type Priority,
+} from '@/lib/adminApi';
+import s from '../admin.module.css';
+
+const PERIODS = [
+  { id: 7, label: 'Últimos 7 dias' },
+  { id: 30, label: 'Últimos 30 dias' },
+  { id: 90, label: 'Últimos 90 dias' },
+  { id: 0, label: 'Todo o período' },
+];
+
+function pct(n: number, total: number) {
+  return total ? `${Math.round((n / total) * 100)}%` : '0%';
+}
+
+function countBy<K extends string>(rows: AdminComplaint[], key: (c: AdminComplaint) => K) {
+  const out = {} as Record<K, number>;
+  for (const r of rows) out[key(r)] = (out[key(r)] ?? 0) + 1;
+  return out;
+}
 
 export default function ReportsPage() {
-  const { complaints, stats } = useAppContext();
+  const { data: list, error, loading } = useAdminData((tk) => adminApi.list(tk));
+  const [days, setDays] = useState(30);
+  const [now] = useState(() => Date.now()); // referência fixa do período
 
-  const total = complaints.length;
-  const childCount = complaints.filter(c => c.category === 'child').length;
-  const elderlyCount = complaints.filter(c => c.category === 'elderly').length;
-  const envCount = complaints.filter(c => c.category === 'env').length;
+  const rows = useMemo(() => {
+    if (!list) return [];
+    if (!days) return list;
+    const since = now - days * 86400000;
+    return list.filter((c) => new Date(c.createdAt).getTime() >= since);
+  }, [list, days, now]);
 
-  const childPerc = total > 0 ? Math.round((childCount / total) * 100) : 0;
-  const elderlyPerc = total > 0 ? Math.round((elderlyCount / total) * 100) : 0;
-  const envPerc = total > 0 ? Math.round((envCount / total) * 100) : 0;
+  const total = rows.length;
+  const byCat = countBy(rows, (c) => c.category);
+  const byStatus = countBy(rows, (c) => c.status);
+  const byPriority = countBy(rows, (c) => c.priority);
+  const closed = (byStatus.concluida ?? 0) + (byStatus.rejeitada ?? 0);
+  const anonymous = rows.filter((c) => c.anonymous).length;
+
+  const places = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      const k = (r.location || 'Não informado').trim();
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  }, [rows]);
+
+  const exportCsv = () => {
+    const lines = [
+      ['Indicador', 'Valor'],
+      ['Período', PERIODS.find((p) => p.id === days)?.label ?? ''],
+      ['Total de denúncias', String(total)],
+      ['Resolvidas (concluídas + encerradas)', String(closed)],
+      ['Anônimas', String(anonymous)],
+      ...(Object.keys(CATEGORY_LABEL) as Category[]).map((c) => [`Área: ${CATEGORY_LABEL[c]}`, String(byCat[c] ?? 0)]),
+      ...STATUS_ORDER.map((st) => [`Status: ${STATUS_LABEL[st]}`, String(byStatus[st] ?? 0)]),
+      ...(['alta', 'media', 'baixa'] as Priority[]).map((p) => [`Prioridade: ${PRIORITY_LABEL[p]}`, String(byPriority[p] ?? 0)]),
+      ...places.map(([place, n]) => [`Local: ${place}`, String(n)]),
+    ];
+    const csv = '﻿' + lines.map((l) => l.map((v) => `"${v.replace(/"/g, '""')}"`).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `relatorio-lumi-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const table = (title: string, entries: [string, number][]) => (
+    <section className={s.card}>
+      <h2 className={s.cardTitle} style={{ marginBottom: 14 }}>{title}</h2>
+      <div className={s.hbars}>
+        {entries.map(([label, n]) => (
+          <div key={label} className={s.hbar}>
+            <div className={s.hbarTop}>
+              <span>{label}</span>
+              <b>{n} <span style={{ fontWeight: 500, color: '#5E6A86' }}>· {pct(n, total)}</span></b>
+            </div>
+            <div className={s.hbarTrack}>
+              <div className={s.hbarFill} style={{ width: pct(n, total), background: '#0B1530' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
   return (
-    <div className={styles.container}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className={s.page}>
+      <div className={s.head}>
         <div>
-          <h1 className={styles.title}>Relatórios e Estatísticas</h1>
-          <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Análise detalhada de dados institucionais</p>
+          <h1 className={s.title}>Relatórios</h1>
+          <p className={s.subtitle}>Números calculados a partir das denúncias registradas.</p>
         </div>
-        <button className={styles.btnAction} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--primary)', borderColor: 'transparent' }}>
-          <Download size={18} /> Baixar PDF Completo
-        </button>
-      </header>
-
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Taxa de Resolução</span>
-            <span className={styles.statValue}>84.2%</span>
-            <span style={{ color: '#4caf50', fontSize: '0.8rem', marginTop: 4 }}>+2.4% este mês</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Tempo Médio Triagem</span>
-            <span className={styles.statValue}>14h 20m</span>
-            <span style={{ color: '#ff9800', fontSize: '0.8rem', marginTop: 4 }}>-5.1% otimização</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Total Denúncias</span>
-            <span className={styles.statValue}>{total}</span>
-            <span style={{ color: '#4caf50', fontSize: '0.8rem', marginTop: 4 }}>Deste o início do sistema</span>
-          </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <select className={s.select} value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Período" style={{ width: 'auto' }}>
+            {PERIODS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+          </select>
+          <button type="button" className={s.btn} onClick={exportCsv} disabled={!total}>
+            <Download size={16} aria-hidden="true" /> CSV
+          </button>
+          <button type="button" className={s.btn} onClick={() => window.print()}>
+            <Printer size={16} aria-hidden="true" /> Imprimir
+          </button>
         </div>
       </div>
 
-      <div className={styles.row}>
-        <div className={styles.recentSection}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <TrendingUp size={24} color="var(--primary)" />
-            <h2 style={{ margin: 0 }}>Crescimento Mensal</h2>
-          </div>
-          <div style={{ height: '300px', display: 'flex', alignItems: 'flex-end', gap: 4, paddingBottom: 20 }}>
-            {[25, 40, 30, 60, 45, 75, total * 5].map((h, i) => (
-              <div key={i} style={{ flex: 1, background: `linear-gradient(to top, var(--primary), #ff8a80)`, height: `${Math.min(h, 100)}%`, borderRadius: '4px 4px 0 0', opacity: 0.8 }}></div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>
-            <span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span><span>Jul</span>
-          </div>
-        </div>
+      {error && <p className={s.error}>{error}</p>}
 
-        <div className={styles.chartPlaceholder}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <PieChart size={24} color="#ffd54f" />
-            <h2 style={{ margin: 0 }}>Por Categoria</h2>
+      <div className={s.kpis} style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+        {[
+          ['Denúncias no período', total],
+          ['Resolvidas', `${closed} (${pct(closed, total)})`],
+          ['Em aberto', total - closed],
+          ['Anônimas', `${anonymous} (${pct(anonymous, total)})`],
+        ].map(([label, value]) => (
+          <div key={String(label)} className={s.kpi}>
+            <span className={s.kpiLabel}>{label}</span>
+            {loading ? <span className={s.skeleton} style={{ height: 32, width: 64 }} /> : <span className={s.kpiValue}>{value}</span>}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: 5 }}>
-                <span>Infância e Juventude</span>
-                <span>{childPerc}%</span>
-              </div>
-              <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${childPerc}%`, background: '#ff8a80' }}></div>
-              </div>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: 5 }}>
-                <span>Idoso e Deficiente</span>
-                <span>{elderlyPerc}%</span>
-              </div>
-              <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${elderlyPerc}%`, background: '#ffd54f' }}></div>
-              </div>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: 5 }}>
-                <span>Meio Ambiente</span>
-                <span>{envPerc}%</span>
-              </div>
-              <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${envPerc}%`, background: '#81c784' }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
+        ))}
+      </div>
+
+      <div className={s.split} style={{ gridTemplateColumns: '1fr 1fr' }}>
+        {table('Por área', (Object.keys(CATEGORY_LABEL) as Category[]).map((c) => [CATEGORY_LABEL[c], byCat[c] ?? 0]))}
+        {table('Por status', STATUS_ORDER.map((st) => [STATUS_LABEL[st], byStatus[st] ?? 0]))}
+        {table('Por prioridade', (['alta', 'media', 'baixa'] as Priority[]).map((p) => [PRIORITY_LABEL[p], byPriority[p] ?? 0]))}
+        {table('Locais mais citados', places.length ? places : [['Sem dados', 0]])}
       </div>
     </div>
   );

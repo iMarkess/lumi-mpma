@@ -43,6 +43,8 @@ interface AppContextType {
   updatePassword: (userId: string, newPass: string) => void;
   isAuthLoading: boolean;
   stats: { today: number; triage: number; urgent: number; completed: number };
+  /** JWT da equipe (painel). null fora do login. */
+  token: string | null;
 }
 
 // Sem usuários embutidos: tudo isto vai no JS público do site. Login só pela API.
@@ -265,7 +267,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{
       complaints, addComplaint, updateComplaintStatus, trackComplaint, refreshComplaints,
       users, currentUser, setCurrentUser, addUser, removeUser,
-      login, logout, updatePassword, isAuthLoading, stats,
+      login, logout, updatePassword, isAuthLoading, stats, token,
     }}>
       {children}
     </AppContext.Provider>

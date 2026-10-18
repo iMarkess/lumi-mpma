@@ -36,7 +36,7 @@ export default function Navbar() {
       <header className={`${styles.wrap} ${scrolled ? styles.scrolled : ''}`}>
         <div className={styles.pill}>
           {/* Sem brasão: a LUMI é independente, não órgão público. */}
-          <Link href="/" className={styles.logo} aria-label="LUMI — página inicial">
+          <Link href="/" className={styles.logo} aria-label="LUMI, página inicial">
             <Image src="/icons/icon-192.png" alt="" width={34} height={34} className={styles.logoMark} priority />
             <span className={styles.logoName}>LUMI</span>
           </Link>

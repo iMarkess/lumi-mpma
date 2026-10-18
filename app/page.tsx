@@ -69,14 +69,14 @@ const NOT_COLLECT = [
   'Nome, CPF ou telefone em denúncia anônima',
   'Sua localização pelo GPS',
   'Contatos, fotos ou arquivos do celular',
-  'Nada para anúncio — não vendemos dados',
+  'Nada para anúncio: não vendemos dados',
 ];
 
 const FAQ = [
-  { q: 'Preciso me identificar?', a: 'Não. A denúncia pode ser totalmente anônima, sem cadastro. Se quiser retorno, informe um e-mail na última etapa — é opcional.' },
+  { q: 'Preciso me identificar?', a: 'Não. A denúncia pode ser totalmente anônima, sem cadastro. Se quiser retorno, informe um e-mail na última etapa. É opcional.' },
   { q: 'A pessoa denunciada vai saber que fui eu?', a: 'Na denúncia anônima não guardamos nenhum dado seu. Na identificada, seu contato fica visível só para a equipe que analisa o caso.' },
   { q: 'Não tenho certeza do que vi. Posso denunciar?', a: 'Pode. Conte o que você sabe com suas palavras. A equipe analisa cada relato; você não precisa ter provas.' },
-  { q: 'Perdi meu protocolo. E agora?', a: 'Se enviou pelo app, ele fica salvo em "Consultar". Por segurança não há outra forma de recuperar — sem o protocolo, ninguém acessa o caso.' },
+  { q: 'Perdi meu protocolo. E agora?', a: 'Se enviou pelo app, ele fica salvo em "Consultar". Por segurança não há outra forma de recuperar. Sem o protocolo, ninguém acessa o caso.' },
   { q: 'A LUMI é um órgão público?', a: 'Não. A LUMI é um canal independente que recebe e organiza denúncias. Em risco imediato, ligue 190.' },
 ];
 
@@ -120,7 +120,7 @@ export default function Home() {
               <Reveal delay={160}>
                 <p className={styles.heroLead}>
                   Olá, eu sou a Lumi. Aqui você denuncia violência contra crianças, idosos,
-                  pessoas com deficiência e o meio ambiente — <strong>sem se expor</strong> — e
+                  pessoas com deficiência e o meio ambiente <strong>sem se expor</strong>, e
                   acompanha cada passo pelo protocolo.
                 </p>
               </Reveal>
@@ -208,7 +208,7 @@ export default function Home() {
                 Sobre o que você quer <span className={styles.lightWord}>falar</span>?
               </h2>
               <p className={styles.lead}>
-                Escolha a área para começar. Na dúvida, escolha a mais próxima — a equipe
+                Escolha a área para começar. Na dúvida, escolha a mais próxima: a equipe
                 redireciona se for preciso.
               </p>
             </Reveal>

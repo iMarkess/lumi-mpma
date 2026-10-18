@@ -44,7 +44,7 @@ app.get('/privacidade', async (_req, reply) => {
   reply.header('Content-Type', 'text/html; charset=utf-8');
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Política de Privacidade — LUMI</title>
+<title>Política de Privacidade | LUMI</title>
 <style>
 :root{--azul:#00458E}
 *{box-sizing:border-box}
@@ -61,13 +61,13 @@ a{color:var(--azul)}
 ul{padding-left:20px}
 footer{border-top:1px solid #e2e8f0;margin-top:40px;padding-top:20px;font-size:.85rem;color:#64748b}
 </style></head><body>
-<header><div class="wrap"><h1>Política de Privacidade — LUMI</h1>
+<header><div class="wrap"><h1>Política de Privacidade | LUMI</h1>
 <p>Aplicativo independente de denúncias</p></div></header>
 <main class="wrap">
 <p class="upd">Última atualização: julho de 2026.</p>
-<p>A LUMI é um aplicativo <b>independente</b> para registro de denúncias — não é
+<p>A LUMI é um aplicativo <b>independente</b> para registro de denúncias. Não é
 canal oficial de nenhum órgão público. Esta política explica como tratamos seus
-dados, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD).</p>
+dados, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD).</p>
 
 <h2>1. Dados que coletamos</h2>
 <ul>
@@ -115,7 +115,7 @@ seus dados, bem como informações sobre o tratamento, pelos canais da central d
 <p>Esta política pode ser atualizada. A versão vigente estará sempre disponível
 neste endereço.</p>
 
-<footer>© LUMI — aplicativo independente. Documento fornecido para
+<footer>© LUMI, aplicativo independente. Documento fornecido para
 fins de conformidade da Google Play. Recomenda-se validação por um profissional jurídico.</footer>
 </main></body></html>`;
 });
@@ -125,7 +125,7 @@ app.get('/excluir-conta', async (_req, reply) => {
   reply.header('Content-Type', 'text/html; charset=utf-8');
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Excluir conta e dados — LUMI</title>
+<title>Excluir conta e dados | LUMI</title>
 <style>
 :root{--azul:#00458E}*{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0b1220;line-height:1.65;background:#f6f8fc}
@@ -135,7 +135,7 @@ h1{margin:0;font-size:1.6rem}main{padding:32px 0 60px}h2{color:var(--azul);margi
 a{color:var(--azul)}ul,ol{padding-left:20px}code{background:#eef1f6;padding:2px 6px;border-radius:6px}
 footer{border-top:1px solid #e2e8f0;margin-top:40px;padding-top:20px;font-size:.85rem;color:#64748b}
 </style></head><body>
-<header><div class="wrap"><h1>Excluir conta e dados — LUMI</h1></div></header>
+<header><div class="wrap"><h1>Excluir conta e dados | LUMI</h1></div></header>
 <main class="wrap">
 <p>Esta página explica como excluir sua conta e seus dados no aplicativo
 <b>LUMI</b> (pacote <code>br.com.lumi.denuncia</code>), desenvolvido por Lucas Marques.</p>
@@ -150,7 +150,7 @@ footer{border-top:1px solid #e2e8f0;margin-top:40px;padding-top:20px;font-size:.
 <h2>Por e-mail (sem acesso ao app)</h2>
 <ol>
 <li>Envie um e-mail para <a href="mailto:lucasmarques1977@gmail.com">lucasmarques1977@gmail.com</a>.</li>
-<li>Assunto: <b>Exclusão de conta — LUMI</b>.</li>
+<li>Assunto: <b>Exclusão de conta LUMI</b>.</li>
 <li>No corpo, informe o <b>CPF</b> ou o <b>e-mail</b> usados no cadastro.</li>
 </ol>
 <p>A solicitação é processada em até <b>7 dias úteis</b>. Você recebe a confirmação por e-mail.</p>
@@ -170,7 +170,7 @@ apuração e por obrigação legal.</li>
 </ul>
 
 <p>Denúncias anônimas não possuem conta associada e, portanto, não exigem exclusão.</p>
-<footer>© LUMI — aplicativo independente. Dúvidas: lucasmarques1977@gmail.com</footer>
+<footer>© LUMI, aplicativo independente. Dúvidas: lucasmarques1977@gmail.com</footer>
 </main></body></html>`;
 });
 

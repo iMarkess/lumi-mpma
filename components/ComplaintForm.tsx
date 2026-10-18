@@ -166,7 +166,7 @@ export default function ComplaintForm({ type, categoryName, steps }: Props) {
       .map(([k, label]) => `${label}: ${answers[k].trim()}`);
     const text = [
       (answers.description ?? '').trim(),
-      extra.length ? `\n— Informações do formulário —\n${extra.join('\n')}` : '',
+      extra.length ? `\nInformações do formulário:\n${extra.join('\n')}` : '',
     ]
       .filter(Boolean)
       .join('\n');
@@ -177,7 +177,7 @@ export default function ComplaintForm({ type, categoryName, steps }: Props) {
     setSending(true);
     setError('');
     const victim = (answers.victim_name ?? '').trim();
-    const title = (victim ? `Denúncia: ${victim}` : `Denúncia — ${categoryName}`).slice(0, 150);
+    const title = (victim ? `Denúncia: ${victim}` : `Denúncia: ${categoryName}`).slice(0, 150);
     const priority = answers.is_urgent === 'Sim' ? 'alta' : 'media';
     try {
       let p: string;
@@ -208,7 +208,7 @@ export default function ComplaintForm({ type, categoryName, steps }: Props) {
       setError(
         (e as Error).message && !/^Erro \d+$/.test((e as Error).message)
           ? (e as Error).message
-          : 'Não foi possível enviar. Verifique sua conexão e tente de novo — suas respostas continuam aqui.',
+          : 'Não foi possível enviar. Verifique sua conexão e tente de novo. Suas respostas continuam aqui.',
       );
     } finally {
       setSending(false);

@@ -6,7 +6,7 @@ export const dynamic = 'force-static';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'LUMI — com você na proteção da vida',
+    name: 'LUMI | com você na proteção da vida',
     short_name: 'LUMI',
     description:
       'Canal independente para registrar denúncias de violência e violação de direitos com sigilo, e acompanhar o andamento por protocolo.',

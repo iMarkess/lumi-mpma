@@ -42,7 +42,7 @@ export default function Footer() {
     <footer className={styles.footer}>
       <div className={`${styles.top} container`}>
         <div className={styles.brand}>
-          <Link href="/" className={styles.logo} aria-label="LUMI — página inicial">
+          <Link href="/" className={styles.logo} aria-label="LUMI, página inicial">
             <Image src="/icons/icon-192.png" alt="" width={44} height={44} className={styles.logoMark} />
             <span className={styles.logoName}>LUMI</span>
           </Link>

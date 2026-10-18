@@ -1,116 +1,146 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import Image from 'next/image';
-import { LayoutDashboard, ListFilter, Map, BarChart3, Settings, LogOut, Users } from 'lucide-react';
-import styles from './AdminLayout.module.css';
+import {
+  BarChart3,
+  Inbox,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Search,
+  Settings,
+  Users,
+  X,
+} from 'lucide-react';
 import { useAppContext } from '@/context/AppContext';
+import styles from './AdminLayout.module.css';
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+type NavItem = { label: string; href: string; icon: typeof Inbox; roles: string[] };
+
+const NAV: NavItem[] = [
+  { label: 'Visão geral', href: '/admin', icon: LayoutDashboard, roles: ['promotor', 'secretaria', 'master'] },
+  { label: 'Denúncias', href: '/admin/triage', icon: Inbox, roles: ['promotor', 'secretaria', 'ouvidoria', 'master'] },
+  { label: 'Relatórios', href: '/admin/reports', icon: BarChart3, roles: ['promotor', 'secretaria', 'ouvidoria', 'master'] },
+  { label: 'Equipe', href: '/admin/users', icon: Users, roles: ['promotor', 'master'] },
+  { label: 'Minha conta', href: '/admin/settings', icon: Settings, roles: ['promotor', 'secretaria', 'ouvidoria', 'master'] },
+];
+
+const ROLE_NAME: Record<string, string> = {
+  promotor: 'Promotor(a)',
+  secretaria: 'Secretaria',
+  ouvidoria: 'Ouvidoria',
+  master: 'Administrador',
+};
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, logout, isAuthLoading } = useAppContext();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
-    // Basic auth guard - only redirect if hydration is done
-    if (!isAuthLoading) {
-      if (!currentUser && pathname !== '/admin/login') {
-        router.push('/admin/login');
-      } else if (currentUser && currentUser.role === 'ouvidoria' && pathname === '/admin') {
-        router.push('/admin/triage');
-      }
-    }
+    if (isAuthLoading) return;
+    if (!currentUser && pathname !== '/admin/login') router.replace('/admin/login');
+    else if (currentUser?.role === 'ouvidoria' && pathname === '/admin') router.replace('/admin/triage');
   }, [currentUser, isAuthLoading, pathname, router]);
 
-  // If on login page, don't show the full admin layout yet
-  if (pathname === '/admin/login') {
-    return <div style={{ minHeight: '100vh', background: '#0a192f' }}>{children}</div>;
-  }
+  if (pathname === '/admin/login') return <>{children}</>;
 
-  // Show a loading state or nothing while hydrating to prevent flickering/redirect loops
-  if (isAuthLoading) {
+  if (isAuthLoading || !currentUser) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a192f' }}>
-        <div className={styles.loadingPulse}></div>
+      <div className={styles.loading}>
+        <span className={styles.spinner} aria-label="Carregando" />
       </div>
     );
   }
 
-  if (!currentUser) return null;
+  const items = NAV.filter((i) => i.roles.includes(currentUser.role));
+  const isActive = (href: string) => (href === '/admin' ? pathname === '/admin' : pathname.startsWith(href));
 
-  const navItems = [
-    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, roles: ['promotor', 'secretaria', 'master'] },
-    { label: 'Triagem', href: '/admin/triage', icon: ListFilter, roles: ['promotor', 'secretaria', 'ouvidoria', 'master'] },
-    { label: 'Mapa de Calor', href: '/admin/heatmap', icon: Map, roles: ['promotor', 'secretaria', 'master'] },
-    { label: 'Relatórios', href: '/admin/reports', icon: BarChart3, roles: ['promotor', 'secretaria', 'ouvidoria', 'master'] },
-    { label: 'Usuários', href: '/admin/users', icon: Users, roles: ['promotor', 'master'] },
-  ];
-
-  const filteredNav = navItems.filter(item => item.roles.includes(currentUser.role));
+  const search = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = query.trim();
+    router.push(q ? `/admin/triage?q=${encodeURIComponent(q)}` : '/admin/triage');
+  };
 
   return (
-    <div className={styles.adminContainer}>
-      <aside className={styles.sidebar}>
-        <div className={styles.logo}>
-          <Image 
-            src="/images/lumi_logo.png"
-            alt="LUMI" 
-            width={48} 
-            height={48} 
-            className={styles.sidebarMpma}
-            priority
-          />
-
+    <div className={styles.shell}>
+      <aside className={`${styles.sidebar} ${menuOpen ? styles.open : ''}`} aria-label="Menu do painel">
+        <div className={styles.brand}>
+          <Image src="/icons/icon-192.png" alt="" width={36} height={36} className={styles.brandMark} />
+          <div>
+            <strong>LUMI</strong>
+            <span>Painel da equipe</span>
+          </div>
+          <button type="button" className={styles.closeMenu} onClick={() => setMenuOpen(false)} aria-label="Fechar menu">
+            <X size={20} />
+          </button>
         </div>
-        
+
         <nav className={styles.nav}>
-          {filteredNav.map(item => (
-            <Link 
-              key={item.href}
-              href={item.href} 
-              className={`${styles.navItem} ${pathname === item.href ? styles.active : ''}`}
+          {items.map(({ label, href, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className={styles.navItem}
+              aria-current={isActive(href) ? 'page' : undefined}
+              onClick={() => setMenuOpen(false)} // fecha a gaveta do celular
             >
-              <item.icon size={20} /> {item.label}
+              <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
+              {label}
             </Link>
           ))}
         </nav>
-        
-        <div className={styles.footer}>
-          <Link href="/admin/settings" className={`${styles.navItem} ${pathname === '/admin/settings' ? styles.active : ''}`}>
-            <Settings size={20} /> Configurações
-          </Link>
-          <div className={styles.logoutWrapper}>
-            <button className={styles.logoutButton} onClick={() => logout()}>
-              <LogOut size={20} />
-              Sair
-            </button>
+
+        <div className={styles.me}>
+          <span className={styles.avatar} aria-hidden="true">{currentUser.avatar}</span>
+          <div className={styles.meText}>
+            <strong>{currentUser.name}</strong>
+            <span>{ROLE_NAME[currentUser.role] ?? currentUser.role}</span>
           </div>
+          <button
+            type="button"
+            className={styles.logout}
+            onClick={() => {
+              logout();
+              router.replace('/admin/login');
+            }}
+            aria-label="Sair do painel"
+            title="Sair"
+          >
+            <LogOut size={18} />
+          </button>
         </div>
       </aside>
-      
-      <main className={styles.main}>
-        <header className={styles.header}>
-          <div className={styles.search}>
-            <input type="text" placeholder="Buscar por protocolo, nome ou local..." />
-          </div>
-          <div className={styles.user}>
-            <div className={styles.avatar}>{currentUser.avatar}</div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: 700, color: '#18181b' }}>{currentUser.name}</span>
-              <span style={{ fontSize: '0.75rem', color: '#71717a', textTransform: 'capitalize', fontWeight: 600 }}>{currentUser.role}</span>
-            </div>
-          </div>
+
+      {menuOpen && <button type="button" className={styles.scrim} onClick={() => setMenuOpen(false)} aria-label="Fechar menu" />}
+
+      <div className={styles.main}>
+        <header className={styles.topbar}>
+          <button type="button" className={styles.menuBtn} onClick={() => setMenuOpen(true)} aria-label="Abrir menu">
+            <Menu size={22} />
+          </button>
+          <form className={styles.search} onSubmit={search} role="search">
+            <Search size={18} aria-hidden="true" />
+            <label htmlFor="admin-busca" className="sr-only">Buscar denúncia</label>
+            <input
+              id="admin-busca"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por protocolo, título ou local"
+            />
+            <kbd>Enter</kbd>
+          </form>
+          <a href="/" className={styles.siteLink} target="_blank" rel="noopener noreferrer">
+            Ver site
+          </a>
         </header>
-        <div className={styles.content}>
-          {children}
-        </div>
-      </main>
+        <main className={styles.content}>{children}</main>
+      </div>
     </div>
   );
 }

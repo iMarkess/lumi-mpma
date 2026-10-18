@@ -27,7 +27,7 @@ const APP_DESCRIPTION =
 export const metadata: Metadata = {
   applicationName: APP_NAME,
   title: {
-    default: "LUMI — com você na proteção da vida",
+    default: "LUMI | com você na proteção da vida",
     template: "%s · LUMI",
   },
   description: APP_DESCRIPTION,
@@ -42,20 +42,20 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     siteName: APP_NAME,
-    title: "LUMI — Luz e proteção para quem mais precisa",
+    title: "LUMI | Luz e proteção para quem mais precisa",
     description: APP_DESCRIPTION,
     images: [
       {
         url: "/store/feature-graphic.png",
         width: 1024,
         height: 500,
-        alt: "LUMI — canal independente de denúncias",
+        alt: "LUMI, canal independente de denúncias",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LUMI — Luz e proteção para quem mais precisa",
+    title: "LUMI | Luz e proteção para quem mais precisa",
     description: APP_DESCRIPTION,
     images: ["/store/feature-graphic.png"],
   },

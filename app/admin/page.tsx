@@ -1,114 +1,238 @@
 'use client';
 
-import { AlertCircle, Clock, CheckCircle2, FileText, MapPin } from 'lucide-react';
-import styles from './Dashboard.module.css';
-import { useAppContext } from '@/context/AppContext';
 import Link from 'next/link';
+import { AlertTriangle, CheckCircle2, Clock, Inbox, Sparkles } from 'lucide-react';
+import { useAppContext } from '@/context/AppContext';
+import { CatIcon, PriorityBadge, StatusBadge, useAdminData } from '@/components/admin/ui';
+import {
+  adminApi,
+  CATEGORY_LABEL,
+  STATUS_LABEL,
+  STATUS_ORDER,
+  timeAgo,
+  type AdminComplaint,
+  type AdminStats,
+  type Category,
+} from '@/lib/adminApi';
+import s from './admin.module.css';
 
-export default function AdminDashboard() {
-  const { stats, complaints, currentUser, isAuthLoading } = useAppContext();
-  
-  if (isAuthLoading || !currentUser) return null;
+const CAT_COLOR: Record<Category, string> = { child: '#2563EB', elderly: '#E3321B', env: '#059669' };
+const STATUS_COLOR: Record<string, string> = {
+  recebida: '#3B82F6',
+  em_triagem: '#F59E0B',
+  em_analise: '#8B5CF6',
+  concluida: '#10B981',
+  rejeitada: '#94A3B8',
+};
 
-  // Guard: Ouvidoria should go directly to Triage or Reports, but we'll show a message here if they land here
-    if (currentUser.role === 'ouvidoria') {
-      return (
-        <div className={styles.container}>
-          <div style={{ padding: 40, textAlign: 'center', color: '#71717a' }}>
-            <h2 style={{ color: '#18181b', marginBottom: '16px' }}>Bem-vindo, {currentUser.name}</h2>
-            <p>Sua conta de Ouvidoria tem acesso aos módulos de <strong>Triagem</strong> e <strong>Relatórios</strong>.</p>
-            <div style={{ marginTop: 30, display: 'flex', gap: 15, justifyContent: 'center' }}>
-              <Link href="/admin/triage" className={styles.btnAction} style={{ padding: '12px 24px', background: 'var(--primary)', color: 'white', border: 'none' }}>Ir para Triagem</Link>
-              <Link href="/admin/reports" className={styles.btnAction} style={{ padding: '12px 24px' }}>Ver Relatórios</Link>
-            </div>
-          </div>
-        </div>
-      );
-    }
-  
-  const statsConfig = [
-    { label: 'Denúncias Hoje', value: stats.today.toString().padStart(2, '0'), icon: <FileText size={24} />, color: '#00458e', href: '/admin/triage' },
-    { label: 'Em Triagem', value: stats.triage.toString().padStart(2, '0'), icon: <Clock size={24} />, color: '#f9a825', href: '/admin/triage?tab=Pendentes' },
-    { label: 'Urgentes', value: stats.urgent.toString().padStart(2, '0'), icon: <AlertCircle size={24} />, color: '#c62828', href: '/admin/triage?tab=Urgentes' },
-    { label: 'Concluídas', value: stats.completed.toString().padStart(2, '0'), icon: <CheckCircle2 size={24} />, color: '#2e7d32', href: '/admin/triage?tab=Concluídas' },
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+}
+
+/** Últimos 14 dias, do mais antigo ao de hoje (chave AAAA-MM-DD em UTC, igual ao servidor). */
+function last14(daily: Record<string, number>) {
+  return Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(Date.now() - (13 - i) * 86400000);
+    const key = d.toISOString().slice(0, 10);
+    return { key, label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), value: daily[key] ?? 0 };
+  });
+}
+
+export default function AdminOverview() {
+  const { currentUser } = useAppContext();
+  const { data, error, loading } = useAdminData(async (t) => {
+    const [stats, list] = await Promise.all([adminApi.stats(t), adminApi.list(t)]);
+    return { stats, list };
+  });
+
+  if (!currentUser) return null;
+
+  const stats: AdminStats | undefined = data?.stats;
+  const list: AdminComplaint[] = data?.list ?? [];
+  const open = list.filter((c) => c.status !== 'concluida' && c.status !== 'rejeitada');
+  // Precisa de atenção: alta prioridade em aberto, a mais antiga primeiro.
+  const attention = open
+    .filter((c) => c.priority === 'alta')
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .slice(0, 5);
+  const fresh = list.filter((c) => c.status === 'recebida').slice(0, 6);
+  const series = stats ? last14(stats.daily) : [];
+  const peak = Math.max(1, ...series.map((d) => d.value));
+  const total = stats?.total ?? 0;
+
+  const kpis = [
+    { label: 'Novas hoje', value: stats?.hoje, icon: Sparkles, color: '#2563EB', bg: '#EAF1FF', href: '/admin/triage?status=recebida', hint: 'recebidas desde 0h' },
+    { label: 'Aguardando triagem', value: stats?.byStatus.recebida ?? 0, icon: Inbox, color: '#1D4ED8', bg: '#EAF1FF', href: '/admin/triage?status=recebida', hint: 'status "recebida"' },
+    { label: 'Em andamento', value: stats ? stats.triagem + stats.analise : undefined, icon: Clock, color: '#B45309', bg: '#FFF6E0', href: '/admin/triage?status=em_analise', hint: 'triagem + análise' },
+    { label: 'Urgentes abertas', value: stats?.urgentes, icon: AlertTriangle, color: '#C2290F', bg: '#FFEFEC', href: '/admin/triage?prioridade=alta', hint: 'prioridade alta' },
+    { label: 'Concluídas', value: stats?.concluidas, icon: CheckCircle2, color: '#047857', bg: '#E6F7F0', href: '/admin/triage?status=concluida', hint: `de ${total} no total` },
   ];
 
-  const recentAlerts = complaints
-    .filter(c => c.priority === 'alta' && c.status !== 'concluída')
-    .slice(0, 3);
-
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Visão Geral</h1>
-      
-      <div className={styles.statsGrid}>
-        {statsConfig.map(stat => (
-          <Link href={stat.href} key={stat.label} className={styles.statLink} style={{ textDecoration: 'none' }}>
-            <div className={styles.statCard}>
-              <div className={styles.statIcon} style={{ background: stat.color }}>
-                {stat.icon}
-              </div>
-              <div className={styles.statInfo}>
-                <span className={styles.statLabel}>{stat.label}</span>
-                <span className={styles.statValue}>{stat.value}</span>
-              </div>
-            </div>
+    <div className={s.page}>
+      <div className={s.head}>
+        <div>
+          <h1 className={s.title}>
+            {greeting()}, {currentUser.name.split(' ')[0]}
+          </h1>
+          <p className={s.subtitle}>
+            {open.length === 0
+              ? 'Nenhuma denúncia em aberto no momento.'
+              : `${open.length} ${open.length === 1 ? 'denúncia em aberto' : 'denúncias em aberto'}${attention.length ? `, ${attention.length} com prioridade alta.` : '.'}`}
+          </p>
+        </div>
+        <Link href="/admin/triage" className={s.btnPrimary}>
+          Abrir caixa de denúncias
+        </Link>
+      </div>
+
+      {error && <p className={s.error}>{error}</p>}
+
+      <div className={s.kpis}>
+        {kpis.map(({ label, value, icon: Icon, color, bg, href, hint }) => (
+          <Link key={label} href={href} className={s.kpi}>
+            <span className={s.kpiTop}>
+              <span className={s.kpiLabel}>{label}</span>
+              <span className={s.kpiIcon} style={{ background: bg, color }}>
+                <Icon size={18} strokeWidth={2} aria-hidden="true" />
+              </span>
+            </span>
+            {loading ? (
+              <span className={s.skeleton} style={{ height: 32, width: 56 }} />
+            ) : (
+              <span className={s.kpiValue}>{value ?? 0}</span>
+            )}
+            <span className={s.kpiHint}>{hint}</span>
           </Link>
         ))}
       </div>
-      
-      <div className={styles.row}>
-        <div className={styles.recentSection}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h2 style={{ margin: 0, color: '#18181b', fontSize: '1.25rem', fontWeight: 700 }}>Alertas Críticos</h2>
-            <Link href="/admin/triage?tab=Urgentes" style={{ fontSize: '0.85rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>Ver todos</Link>
+
+      <div className={s.split}>
+        <section className={s.card} aria-labelledby="atencao">
+          <div className={s.cardHead}>
+            <h2 id="atencao" className={s.cardTitle}>Precisam de atenção</h2>
+            <Link href="/admin/triage?prioridade=alta" className={s.cardLink}>Ver todas</Link>
           </div>
-          {recentAlerts.length > 0 ? recentAlerts.map(alert => (
-            <div key={alert.id} className={`${styles.alert} ${styles.high}`}>
-              <AlertCircle size={20} />
-              <div className={styles.alertContent}>
-                <strong>{alert.title}</strong>
-                <span>Protocolo: {alert.id} | Local: {alert.location}</span>
-              </div>
-              <Link href={`/admin/triage?id=${alert.id}`} className={styles.btnAction} style={{ textDecoration: 'none' }}>Ver Detalhes</Link>
+          {loading ? (
+            <div style={{ display: 'grid', gap: 10 }}>
+              {[0, 1, 2].map((i) => <span key={i} className={s.skeleton} style={{ height: 56 }} />)}
             </div>
-          )) : (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#71717a', border: '1px dashed rgba(0, 0, 0, 0.12)', borderRadius: '12px', background: '#fafafa' }}>
-              Nenhum alerta urgente pendente.
+          ) : attention.length === 0 ? (
+            <div className={s.empty}>
+              <strong>Tudo em dia</strong>
+              Nenhuma denúncia de prioridade alta em aberto.
+            </div>
+          ) : (
+            <div className={s.rows}>
+              {attention.map((c) => (
+                <Link key={c.id} href={`/admin/triage?id=${c.id}`} className={s.row}>
+                  <CatIcon cat={c.category} />
+                  <span style={{ minWidth: 0 }}>
+                    <span className={s.rowTitle} style={{ display: 'block' }}>{c.title}</span>
+                    <span className={s.rowMeta}>
+                      {c.id} · {c.location} · {timeAgo(c.createdAt)}
+                    </span>
+                  </span>
+                  <StatusBadge status={c.status} />
+                </Link>
+              ))}
             </div>
           )}
-        </div>
-        
-        <div className={styles.chartPlaceholder}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h2 style={{ margin: 0, color: '#18181b', fontSize: '1.25rem', fontWeight: 700 }}>Monitoramento Geográfico</h2>
-            <Link href="/admin/heatmap" style={{ fontSize: '0.85rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>Abrir Mapa Full</Link>
+        </section>
+
+        <section className={s.card} aria-labelledby="areas">
+          <div className={s.cardHead}>
+            <h2 id="areas" className={s.cardTitle}>Por área</h2>
           </div>
-          <div className={styles.mapBox} style={{ height: '300px' }}>
-            <div className="scanline-overlay" style={{ opacity: 0.05 }}></div>
-            {complaints.slice(0, 15).map(c => {
-              const hash = c.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-              const top = `${25 + (hash % 50)}%`;
-              const left = `${30 + (hash % 40)}%`;
+          <div className={s.hbars}>
+            {(Object.keys(CATEGORY_LABEL) as Category[]).map((cat) => {
+              const n = stats?.byCategory[cat] ?? 0;
               return (
-                <Link key={c.id} href={`/admin/triage?id=${c.id}`}>
-                  <div 
-                    className={styles.mapDotSmall} 
-                    style={{ 
-                      top, 
-                      left, 
-                      background: c.priority === 'alta' ? '#ff4081' : 'var(--primary)',
-                      boxShadow: `0 0 10px ${c.priority === 'alta' ? '#ff4081' : 'var(--primary)'}`
-                    }}
-                    title={`${c.title} - ${c.location}`}
-                  ></div>
-                </Link>
+                <div key={cat} className={s.hbar}>
+                  <div className={s.hbarTop}>
+                    <span>{CATEGORY_LABEL[cat]}</span>
+                    <b>{n}</b>
+                  </div>
+                  <div className={s.hbarTrack}>
+                    <div className={s.hbarFill} style={{ width: `${total ? (n / total) * 100 : 0}%`, background: CAT_COLOR[cat] }} />
+                  </div>
+                </div>
               );
             })}
-            <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '2px', opacity: 0.3, fontWeight: 900 }}>Radar LUMI Ativo</span>
           </div>
-        </div>
+        </section>
       </div>
+
+      <div className={s.split}>
+        <section className={s.card} aria-labelledby="serie">
+          <div className={s.cardHead}>
+            <h2 id="serie" className={s.cardTitle}>Denúncias recebidas nos últimos 14 dias</h2>
+            <span className={s.kpiHint}>{series.reduce((a, d) => a + d.value, 0)} no período</span>
+          </div>
+          <div className={s.chart} role="img" aria-label={series.map((d) => `${d.label}: ${d.value}`).join(', ')}>
+            {series.map((d) => (
+              <span
+                key={d.key}
+                className={`${s.bar} ${d.value === 0 ? s.barEmpty : ''}`}
+                style={{ height: `${Math.max(4, (d.value / peak) * 100)}%` }}
+                title={`${d.label}: ${d.value}`}
+              />
+            ))}
+          </div>
+          <div className={s.chartAxis}>
+            <span>{series[0]?.label}</span>
+            <span>hoje</span>
+          </div>
+        </section>
+
+        <section className={s.card} aria-labelledby="status">
+          <div className={s.cardHead}>
+            <h2 id="status" className={s.cardTitle}>Por status</h2>
+          </div>
+          <div className={s.hbars}>
+            {STATUS_ORDER.map((st) => {
+              const n = stats?.byStatus[st] ?? 0;
+              return (
+                <div key={st} className={s.hbar}>
+                  <div className={s.hbarTop}>
+                    <span>{STATUS_LABEL[st]}</span>
+                    <b>{n}</b>
+                  </div>
+                  <div className={s.hbarTrack}>
+                    <div className={s.hbarFill} style={{ width: `${total ? (n / total) * 100 : 0}%`, background: STATUS_COLOR[st] }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
+      <section className={s.card} aria-labelledby="novas">
+        <div className={s.cardHead}>
+          <h2 id="novas" className={s.cardTitle}>Chegaram e ainda não foram triadas</h2>
+          <Link href="/admin/triage?status=recebida" className={s.cardLink}>Ver todas</Link>
+        </div>
+        {!loading && fresh.length === 0 ? (
+          <div className={s.empty}>Nenhuma denúncia esperando triagem.</div>
+        ) : (
+          <div className={s.rows}>
+            {fresh.map((c) => (
+              <Link key={c.id} href={`/admin/triage?id=${c.id}`} className={s.row}>
+                <CatIcon cat={c.category} />
+                <span style={{ minWidth: 0 }}>
+                  <span className={s.rowTitle} style={{ display: 'block' }}>{c.title}</span>
+                  <span className={s.rowMeta}>
+                    {c.id} · {CATEGORY_LABEL[c.category]} · {timeAgo(c.createdAt)}
+                  </span>
+                </span>
+                {c.priority === 'alta' ? <PriorityBadge priority={c.priority} /> : <StatusBadge status={c.status} />}
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
